@@ -29,6 +29,4 @@ File sharing and document previews are outside the initial scope.
 
 ## Running locally
 
-Not yet available: this checkpoint version contains design documents only.
-
-The planned application will use Python 3.12, Flask and SQLite on the local computer, accessed through a browser over HTTPS. Installation and startup instructions remain pending and will be added with the first implementation.
+The planned application will use Python 3.12, Flask and SQLite on the local computer, accessed through a browser over HTTPS.
