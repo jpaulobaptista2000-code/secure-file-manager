@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Secure File Manager — a personal file management project.">
+    <title>Secure File Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="{{ url_for('index') }}">Secure File Manager</a>
+      <span class="version">First version</span>
+    </header>
+
+    <main>
+      <p class="eyebrow">Your personal file space</p>
+      <h1>A home for<br>your documents.</h1>
+      <p class="intro">A simple way to manage your own PDF and text files.</p>
+
+      <section class="notice" aria-labelledby="notice-title">
+        <span class="notice-label">Getting started</span>
+        <h2 id="notice-title">The first page is ready.</h2>
+        <p>Account creation, sign-in and file management will be available in the next stages. You cannot upload files yet.</p>
+      </section>
+    </main>
+
+    <footer>Web Application Security · Student project</footer>
+  </body>
+</html>
