@@ -131,11 +131,29 @@ public hosting setup. The documented startup refuses to run without TLS files.
 | Symptom | What to check |
 | --- | --- |
 | `py` or `git` is not recognized | Install the missing tool and reopen PowerShell. |
-| `mkcert` is not recognized | Reopen PowerShell after installation and check `mkcert -version`. |
+| `mkcert` is not recognized | Reopen PowerShell; if the command is still missing, follow the PATH check below. |
 | Missing TLS files | Complete step 4 in the project folder. |
 | Browser certificate warning | Check `mkcert -install`, restart the browser, and use `localhost` or `127.0.0.1`. Fix the trust problem before the demonstration. |
 | Port 5000 already in use | Stop an earlier project server with Ctrl+C, then start this one. |
 | Connection fails | Keep the server terminal open and include `https://` in the address. |
+| `GET /favicon.ico` returns 404 | The optional browser-tab icon has not been added. This does not prevent the page or HTTPS from working. |
+
+If mkcert is installed but PowerShell cannot find it, first confirm the installation:
+
+```powershell
+winget list --id FiloSottile.mkcert --exact
+```
+
+If mkcert appears in the list, reload the saved system and user PATH values into
+the current PowerShell session, then check the version again:
+
+```powershell
+$env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")
+mkcert -version
+```
+
+PATH is the list of directories used to find commands. This refresh resolved the
+command lookup problem during the Windows setup on 26 October 2026.
 
 ### How the files fit together
 
