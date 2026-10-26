@@ -51,8 +51,8 @@ minute per client IP. These counters are in memory for the current single-proces
 local setup, so restarting resets them. Public deployment would require shared
 persistent rate-limit storage.
 
-The protected `/files` page currently confirms the signed-in account. Uploads and
-file operations remain unimplemented. Database creation is automatic on startup;
+At the end of step 2, `/files` only confirmed the signed-in account. Uploads and
+file operations were still pending. Database creation is automatic on startup;
 the database and random application secret remain in the ignored instance folder.
 
 ### Step 2 verification
@@ -77,9 +77,52 @@ welcome page, and that opening `/files` directly after signing out redirected
 them to the login page. These are student-reported functional checks; they do
 not replace the automated security tests above.
 
+## Step 3 — Validated uploads and encrypted storage
+
+The `/files` page now has an upload form and a paginated list belonging to the
+authenticated account. `POST /files/upload` accepts one nonempty PDF or UTF-8
+TXT file up to 5 MiB, checks its name, extension and basic content, and assigns
+its owner from the server session. The browser's MIME type and owner fields
+are not trusted. Uploads require CSRF protection and are limited to 10 submissions
+per minute per account. The server limits request size and multipart parts.
+
+Uploads remain in bounded memory before encryption. Each has a fresh AES-256-GCM
+key and nonce. The encrypted format contains a version marker, nonce, ciphertext
+and tag; additional authenticated data binds the contents to the file ID, owner,
+name, media type and size. Ciphertext and keys are saved in separate private
+folders under `instance/`, using random identifiers. SQLite holds metadata only.
+New directories use restrictive permissions, including Python 3.13's Windows
+ACL support. Existing accounts are preserved when the new file table is created.
+
+Ordinary disk/database failures clean up new files and roll back metadata.
+The PDF check validates header/end markers, not malware or the full document
+structure. The current version has no aggregate storage quota or automatic
+orphan reconciliation after a hard crash. The server holds the decryption keys,
+so server compromise remains a threat. Filenames and ownership metadata remain
+readable in SQLite. See the README for the format and local-data handling.
+
+### Step 3 verification
+
+All 39 automated checks pass in the Linux development environment: the 18
+authentication checks plus 21 upload/storage checks. The latter cover owner
+isolation, forged owner/MIME fields, CSRF, path and content validation, size and
+multipart limits, independent keys/nonces, byte-for-byte decryption, tampering,
+collision protection, rate limits, pagination, private paths/permissions and
+cleanup after simulated disk/database failures. Dependency checks pass, and the
+new cryptography dependency has an available Windows Python 3.13 binary wheel.
+
+A separate HTTP-client test used a real HTTPS server with certificate validation.
+It preserved a pre-existing account database, uploaded a TXT file larger than
+500 KiB and a PDF, and independently decrypted the stored bytes back to the
+original contents. The files and session survived a server restart. A second
+account could not see the first account's filenames.
+
+The student's native Windows upload walkthrough is still pending; no Windows
+upload or browser-visual verification result is claimed yet.
+
 ## Still to implement
 
-- File validation, encryption, listing, ownership checks, decryption and deletion.
+- Ownership-checked download/decryption and deletion through the website.
 - End-to-end security testing and a clean-machine Windows demonstration of the
   completed application.
 

@@ -1,4 +1,4 @@
-"""Registration, login and logout. File handling is added in a later step."""
+"""Registration, login and logout."""
 
 import re
 

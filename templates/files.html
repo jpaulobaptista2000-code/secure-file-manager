@@ -3,10 +3,47 @@
 {% block content %}
   <p class="eyebrow">Your account</p>
   <h1 class="form-title">Welcome, {{ g.user.username }}.</h1>
-  <p class="intro">You are signed in to your personal space.</p>
-  <section class="notice" aria-labelledby="files-title">
-    <span class="notice-label">My files</span>
-    <h2 id="files-title">File management is coming next.</h2>
-    <p>Your account is ready. Uploading, downloading and deleting files will be available in the next stage.</p>
+  <p class="intro">Upload your documents. Their contents are encrypted before being saved.</p>
+  <section class="upload-panel" aria-labelledby="upload-title">
+    <h2 id="upload-title">Upload a file</h2>
+    {% if error %}<p class="message message-error" role="alert">{{ error }}</p>{% endif %}
+    <form class="account-form" action="{{ url_for('file_routes.upload') }}" method="post" enctype="multipart/form-data">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <label for="file">Choose a document</label>
+      <input id="file" name="file" type="file" accept=".pdf,.txt" required aria-describedby="upload-help">
+      <p class="field-help" id="upload-help">PDF or UTF-8 text (.txt), up to {{ upload_limit_mib }} MiB. One file at a time.</p>
+      <button class="button" type="submit">Upload and encrypt</button>
+    </form>
+  </section>
+  <section class="file-list" aria-labelledby="files-title">
+    <h2 id="files-title">My files <span class="file-count">({{ page.total }})</span></h2>
+    {% if page.items %}
+      <div class="table-scroll">
+        <table>
+          <caption class="field-help">Only files belonging to your account are listed.</caption>
+          <thead><tr><th scope="col">Name</th><th scope="col">Size</th><th scope="col">Uploaded (UTC)</th><th scope="col">Status</th></tr></thead>
+          <tbody>
+            {% for file in page.items %}
+              <tr>
+                <td class="file-name">{{ file.filename }}</td>
+                <td>{{ '%.1f'|format(file.size_bytes / 1024) }} KiB</td>
+                <td>{{ file.uploaded_utc }}</td>
+                <td><span class="file-status">Encrypted</span></td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% if page.has_prev or page.has_next %}
+        <nav class="pagination" aria-label="File pages">
+          {% if page.has_prev %}<a href="{{ url_for('files', page=page.prev_num) }}">Previous</a>{% endif %}
+          <span>Page {{ page.page }} of {{ page.pages }}</span>
+          {% if page.has_next %}<a href="{{ url_for('files', page=page.next_num) }}">Next</a>{% endif %}
+        </nav>
+      {% endif %}
+    {% else %}
+      <p class="empty-state">No files on this page yet. Upload a document using the form above.</p>
+    {% endif %}
+    <p class="field-help">Downloads and deletion will be added in the next stage.</p>
   </section>
 {% endblock %}

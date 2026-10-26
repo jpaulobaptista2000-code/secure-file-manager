@@ -121,6 +121,26 @@ a:focus-visible, button:focus-visible, input:focus-visible {
 .message { padding: 1rem; border-radius: .35rem; line-height: 1.5; }
 .message-error { background: #fce9e7; color: #822d25; }
 .message-success { background: #e3f2e9; color: #16513b; }
+.upload-panel {
+  max-width: 36rem;
+  margin-block: 2rem;
+  padding: 1.5rem;
+  border: 1px solid #dbe2e9;
+  border-radius: .5rem;
+  background: #fff;
+}
+.upload-panel h2 { margin-top: 0; }
+.file-list { margin-top: 2.5rem; }
+.file-count { color: #4e5e6c; font-size: 1rem; font-weight: 400; }
+.table-scroll { overflow-x: auto; margin-bottom: 1rem; }
+table { width: 100%; border-collapse: collapse; text-align: left; background: #fff; }
+caption { text-align: left; padding-bottom: .7rem; }
+th, td { padding: 1rem; border-bottom: 1px solid #dbe2e9; }
+th { background: #edf2f5; font-size: .9rem; }
+.file-name { overflow-wrap: anywhere; min-width: 10rem; max-width: 24rem; }
+.file-status { color: #16513b; background: #e3f2e9; padding: .3rem .6rem; border-radius: .3rem; }
+.pagination { margin-block: 1rem; }
+.empty-state { padding: 1.5rem; border: 1px dashed #9baab7; border-radius: .4rem; color: #4e5e6c; }
 @media (max-width: 560px) {
   .site-header { align-items: flex-start; flex-direction: column; }
   nav { gap: .8rem; }

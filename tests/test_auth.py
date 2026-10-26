@@ -1,78 +1,16 @@
 """Exercise real forms, cookies and database sessions in an isolated directory."""
 
 from datetime import datetime, timedelta, timezone
-import re
-import tempfile
 import time
 import unittest
 from unittest.mock import patch
 
-from app import create_app
-from extensions import db, limiter
+from extensions import db
 from models import User
 from security import password_hasher
+from tests.helpers import BASE_URL, PASSWORD, WebTestCase
 
-BASE_URL = "https://localhost"
-PASSWORD = "a test passphrase with spaces"
-
-
-class AuthenticationTests(unittest.TestCase):
-    @classmethod
-    def setUpClass(cls):
-        cls.directory = tempfile.TemporaryDirectory()
-        cls.app = create_app({"TESTING": True}, instance_path=cls.directory.name)
-
-    @classmethod
-    def tearDownClass(cls):
-        with cls.app.app_context():
-            db.session.remove()
-            db.engine.dispose()
-        cls.directory.cleanup()
-
-    def setUp(self):
-        with self.app.app_context():
-            db.drop_all()
-            db.create_all()
-            limiter.reset()
-        self.client = self.app.test_client()
-
-    def get(self, path, client=None):
-        return (client or self.client).get(path, base_url=BASE_URL)
-
-    def post(self, path, data, client=None, referer=None, **kwargs):
-        return (client or self.client).post(
-            path, data=data, base_url=BASE_URL,
-            headers={"Referer": referer or BASE_URL + path}, **kwargs,
-        )
-
-    def token(self, path, client=None):
-        response = self.get(path, client)
-        self.assertEqual(response.status_code, 200)
-        match = re.search(r'name="csrf_token" value="([^"]+)"', response.get_data(as_text=True))
-        self.assertIsNotNone(match)
-        return match.group(1)
-
-    def register(self, username="alice", password=PASSWORD, client=None):
-        return self.post("/register", {
-            "username": username, "password": password, "confirm_password": password,
-            "csrf_token": self.token("/register", client),
-        }, client)
-
-    def login(self, username="alice", password=PASSWORD, client=None):
-        return self.post("/login", {
-            "username": username, "password": password,
-            "csrf_token": self.token("/login", client),
-        }, client)
-
-    def signed_in(self):
-        self.assertEqual(self.register().status_code, 303)
-        self.assertEqual(self.login().status_code, 303)
-
-    def assert_login_required(self, client=None):
-        response = self.get("/files", client)
-        self.assertEqual(response.status_code, 303)
-        self.assertEqual(response.headers["Location"], "/login")
-
+class AuthenticationTests(WebTestCase):
     def test_registration_hashes_password_with_unique_salts(self):
         self.assertEqual(self.register().status_code, 303)
         self.assertEqual(self.register("bob").status_code, 303)
