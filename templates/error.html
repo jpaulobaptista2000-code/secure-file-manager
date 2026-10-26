@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}{{ title }} · Secure File Manager{% endblock %}
+{% block content %}
+  <section class="auth-panel">
+    <h1 class="form-title">{{ title }}</h1>
+    <p class="intro">{{ message }}</p>
+    <a class="button button-secondary" href="{{ url_for('index') }}">Back to home</a>
+  </section>
+{% endblock %}

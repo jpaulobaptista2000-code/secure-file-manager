@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Secure File Manager — your personal file space.">
+    <title>{% block title %}Secure File Manager{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="{{ url_for('index') }}">Secure File Manager</a>
+      <nav aria-label="Main navigation">
+        {% if g.user %}
+          <a href="{{ url_for('files') }}">My files</a>
+          <form action="{{ url_for('auth.logout') }}" method="post" class="inline-form">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button class="button button-secondary" type="submit">Sign out</button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('auth.login') }}">Sign in</a>
+          <a class="button" href="{{ url_for('auth.register') }}">Create account</a>
+        {% endif %}
+      </nav>
+    </header>
+    <main>
+      {% for category, message in get_flashed_messages(with_categories=true) %}
+        <p class="message message-{{ category }}" role="status">{{ message }}</p>
+      {% endfor %}
+      {% block content %}{% endblock %}
+    </main>
+    <footer>Web Application Security · Student project</footer>
+  </body>
+</html>

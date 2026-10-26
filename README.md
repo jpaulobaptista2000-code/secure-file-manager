@@ -2,9 +2,9 @@
 
 ICS0027 Web Application Security - Project 1.
 
-Checkpoint 2, step 1: the Flask home page and local HTTPS startup are implemented.
-Authentication, database storage and file encryption are still planned. This is
-not yet the complete Checkpoint 2 submission.
+Checkpoint 2, step 2: local HTTPS, account registration, login, logout and
+SQLite-backed sessions are implemented. File uploads, encryption and file
+management are still planned. This is not yet the complete Checkpoint 2 submission.
 
 Read the [short design document](docs/architecture.md).
 The design document describes the planned system; the
@@ -12,24 +12,24 @@ The design document describes the planned system; the
 
 ## Scope and planned features
 
-- Register, log in and log out.
+- Register, log in and log out (implemented).
 - Upload, list, download and delete the user's own PDF and text files.
 - Encrypt files on the server and check ownership before granting access.
 
 File sharing and document previews are outside the initial scope.
 
-## Planned routes
+## Routes and implementation status
 
 | Method | Route | Purpose |
 | --- | --- | --- |
 | GET | / | Welcome page (implemented) |
-| GET, POST | /register | Create an account |
-| GET, POST | /login | Sign in |
-| POST | /logout | End the session |
-| GET | /files | List the user's files |
-| POST | /files/upload | Upload a file |
-| GET | /files/{file_id}/download | Download an owned file |
-| POST | /files/{file_id}/delete | Delete an owned file |
+| GET, POST | /register | Create an account (implemented) |
+| GET, POST | /login | Sign in (implemented) |
+| POST | /logout | End the session (implemented) |
+| GET | /files | Protected account page; actual file listing is still planned |
+| POST | /files/upload | Upload a file (planned) |
+| GET | /files/{file_id}/download | Download an owned file (planned) |
+| POST | /files/{file_id}/delete | Delete an owned file (planned) |
 
 ## Running locally
 
@@ -126,6 +126,76 @@ The server listens only on `127.0.0.1:5000`, uses TLS 1.2 or newer, and keeps th
 interactive debugger disabled. This is Flask's local development server, not a
 public hosting setup. The documented startup refuses to run without TLS files.
 
+On first startup, the application automatically creates its SQLite database and
+a random application secret in `instance/`. No separate database installation or
+initialization command is needed.
+
+### Updating an existing step 1 installation
+
+Stop the server with Ctrl+C, and run the following in the project folder. Check
+`git status` first; preserve any local source-code changes before pulling.
+
+```powershell
+git pull --ff-only
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe run.py
+```
+
+Keep your existing `.venv` and `certs/` folders. The new dependencies are installed
+into the existing environment, and the local certificate is reused.
+
+### Try registration and login
+
+1. Open https://localhost:5000 and choose **Create account**.
+2. Choose a username with 3–30 letters (a–z), numbers or underscores. Usernames
+   are case-insensitive. Choose a password with 15–128 characters; spaces and
+   Unicode are accepted, and passwords are never silently trimmed or truncated.
+3. Registration takes you to **Sign in**. An incorrect password should be rejected.
+4. Sign in with the correct password. The protected page should welcome you by
+   username. File-management controls will be added in the next stage.
+5. Choose **Sign out**, then try https://localhost:5000/files directly. You should
+   be sent to the sign-in page. The same applies in a separate private window.
+6. Restart the server and sign in again: your account should still exist.
+
+Use the same hostname throughout the demonstration. `localhost` and `127.0.0.1`
+are different cookie hosts, so each has a separate browser session.
+
+### Authentication and local data
+
+- Passwords are salted Argon2id hashes produced by `argon2-cffi`.
+- Flask-Session keeps session data in SQLite. The cookie contains a random
+  identifier, with `Secure`, `HttpOnly` and `SameSite=Lax` flags.
+- Authentication expires after 15 minutes of inactivity or 2 hours in total,
+  enforced on the server. Login replaces the session ID; logout deletes the
+  server session. Browser-side edits cannot grant authentication.
+- Flask-WTF checks CSRF tokens on every POST, including registration, login and
+  logout. Same-origin HTTPS referrers are retained for its additional check.
+- Flask-Limiter allows 5 POST submissions per minute per client IP on each of
+  `/login` and `/register`, including successful submissions. This local version
+  keeps rate-limit counters in memory; they reset when the server restarts and
+  are not shared between server processes. A deployed version would need shared
+  persistent rate-limit storage.
+- The current form request limit is 16 KiB. The upload stage will define separate
+  file limits. Dynamic pages use `Cache-Control: no-store`.
+
+`instance/file_manager.sqlite3` holds accounts and sessions. `instance/secret.key`
+is a randomly generated application secret used to sign CSRF tokens; it is not
+a file-encryption key. Keep the instance folder between restarts. It is private,
+excluded from Git and not served by the website. Expired database sessions are
+cleaned up periodically during requests.
+
+### Automated authentication checks
+
+From the project folder:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+The tests create a separate temporary database and leave your accounts alone.
+They cover password hashing, invalid credentials, form validation, CSRF,
+rate limiting, session rotation, expiry, logout replay and protected access.
+
 ### Troubleshooting
 
 | Symptom | What to check |
@@ -137,6 +207,8 @@ public hosting setup. The documented startup refuses to run without TLS files.
 | Port 5000 already in use | Stop an earlier project server with Ctrl+C, then start this one. |
 | Connection fails | Keep the server terminal open and include `https://` in the address. |
 | `GET /favicon.ico` returns 404 | The optional browser-tab icon has not been added. This does not prevent the page or HTTPS from working. |
+| A security-token error appears | Reopen the form to get a fresh token, use the same hostname, and submit again. |
+| Too many attempts (429) | Wait a minute before submitting the login or registration form again. |
 
 If mkcert is installed but PowerShell cannot find it, first confirm the installation:
 
@@ -160,18 +232,21 @@ command lookup problem during the Windows setup on 26 October 2026.
 | File | Role |
 | --- | --- |
 | `run.py` | Loads the local TLS certificate and starts the server. |
-| `app.py` | Creates the Flask application and handles the home-page request. |
-| `templates/index.html` | Defines the content of the page. |
+| `app.py` | Configures the application, sessions, request checks and protected page. |
+| `auth.py` | Handles registration, login and logout. |
+| `models.py` | Defines the user record stored in SQLite. |
+| `security.py` | Handles password checks, the local secret and session expiry/rotation. |
+| `extensions.py` | Connects the database, session, CSRF and rate-limit libraries. |
+| `templates/` | Defines the home page, forms and protected account page. |
 | `static/style.css` | Defines its appearance. |
 | `requirements.txt` | Lists the Python dependencies for installation. |
 | `.gitignore` | Keeps generated files and local secrets out of commits. |
 
 ## Next steps
 
-1. Add SQLite, registration, login, logout and server-side sessions.
-2. Add validated uploads and server-side AES-256-GCM encryption.
-3. Add ownership-checked listing, download/decryption and deletion.
-4. Test the security boundaries and complete the Checkpoint 2 progress note.
+1. Add validated uploads and server-side AES-256-GCM encryption.
+2. Add ownership-checked listing, download/decryption and deletion.
+3. Test the file-security boundaries and complete the Checkpoint 2 progress note.
 
 Keep one meaningful commit for each completed increment.
 
@@ -180,3 +255,7 @@ Keep one meaningful commit for each completed increment.
 - [Flask installation and virtual environments](https://flask.palletsprojects.com/en/stable/installation/)
 - [Werkzeug development server and TLS](https://werkzeug.palletsprojects.com/en/stable/serving/)
 - [mkcert documentation](https://github.com/FiloSottile/mkcert)
+- [Argon2 password hashing](https://argon2-cffi.readthedocs.io/en/stable/howto.html)
+- [Flask-Session security](https://flask-session.readthedocs.io/en/latest/security.html)
+- [Flask-WTF CSRF protection](https://flask-wtf.readthedocs.io/en/stable/csrf/)
+- [Flask-Limiter](https://flask-limiter.readthedocs.io/en/stable/)

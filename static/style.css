@@ -77,3 +77,52 @@ h1 {
 .notice h2 { margin: .65rem 0; font-size: 1.25rem; }
 .notice p { margin: 0; color: #4e5e6c; line-height: 1.7; }
 footer { padding-block: 1.5rem; font-size: .85rem; color: #4e5e6c; }
+
+a { color: #176b58; }
+nav, .actions { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+nav a { font-size: .9rem; }
+.inline-form { margin: 0; }
+.button {
+  display: inline-block;
+  padding: .75rem 1.2rem;
+  border: 1px solid #176b58;
+  border-radius: .35rem;
+  background: #176b58;
+  color: #fff;
+  font: inherit;
+  font-weight: 600;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+}
+.button:hover { background: #105140; border-color: #105140; }
+.button-secondary { background: transparent; color: #176b58; }
+.button-secondary:hover { background: #e6efeb; }
+a:focus-visible, button:focus-visible, input:focus-visible {
+  outline: 3px solid #248873;
+  outline-offset: 3px;
+}
+.auth-panel { max-width: 30rem; margin-inline: auto; }
+.form-title { font-size: clamp(2rem, 5vw, 3rem); overflow-wrap: anywhere; }
+.account-form { display: flex; flex-direction: column; gap: .6rem; }
+.account-form label { font-weight: 600; margin-top: .5rem; }
+.account-form input:not([type="hidden"]) {
+  width: 100%;
+  padding: .8rem;
+  border: 1px solid #9baab7;
+  border-radius: .35rem;
+  background: #fff;
+  color: #182c3b;
+  font: inherit;
+}
+.account-form .button { margin-top: 1rem; }
+.field-help { margin: 0 0 .4rem; font-size: .85rem; color: #4e5e6c; line-height: 1.5; }
+.form-switch { margin-top: 1.5rem; line-height: 1.6; }
+.message { padding: 1rem; border-radius: .35rem; line-height: 1.5; }
+.message-error { background: #fce9e7; color: #822d25; }
+.message-success { background: #e3f2e9; color: #16513b; }
+@media (max-width: 560px) {
+  .site-header { align-items: flex-start; flex-direction: column; }
+  nav { gap: .8rem; }
+  main { padding-block: 2.5rem; }
+}
