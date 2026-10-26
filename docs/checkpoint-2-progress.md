@@ -63,14 +63,19 @@ registration and salted hashing; duplicate and invalid input; wrong credentials;
 CSRF rejection; session fixation prevention; idle, absolute and database expiry;
 logout replay; forged cookies; rate limiting; injection input; failure handling;
 and inaccessible private files. Windows Python 3.13 dependency wheels were also
-resolved successfully. Authentication still needs the student's Windows walkthrough.
+resolved successfully.
 
 A separate HTTP-client check used a real local HTTPS server and validated its
 test certificate. Registration and login worked, accounts and authenticated
 sessions survived a server restart, and a revoked cookie could not regain access
-after logout. The automated browser could not be installed in this environment;
-visual and native-browser validation of the new forms remains part of the
-Windows walkthrough.
+after logout. The automated browser could not be installed in this environment.
+
+On 26 October 2026, the student completed the manual Windows browser walkthrough
+using the local HTTPS application. They confirmed that the registration and
+login buttons appeared, that creating an account and signing in reached the
+welcome page, and that opening `/files` directly after signing out redirected
+them to the login page. These are student-reported functional checks; they do
+not replace the automated security tests above.
 
 ## Still to implement
 
