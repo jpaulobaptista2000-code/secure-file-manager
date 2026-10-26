@@ -140,6 +140,11 @@ th { background: #edf2f5; font-size: .9rem; }
 .file-name { overflow-wrap: anywhere; min-width: 10rem; max-width: 24rem; }
 .file-status { color: #16513b; background: #e3f2e9; padding: .3rem .6rem; border-radius: .3rem; }
 .pagination { margin-block: 1rem; }
+.file-actions { display: flex; flex-wrap: wrap; gap: .5rem; min-width: 8rem; }
+.button-small { padding: .5rem .75rem; font-size: .85rem; }
+.button-danger { background: #a02e25; border-color: #a02e25; color: #fff; }
+.button-danger:hover { background: #7c211a; border-color: #7c211a; }
+.delete-filename { font-size: 1.2rem; font-weight: 600; overflow-wrap: anywhere; }
 .empty-state { padding: 1.5rem; border: 1px dashed #9baab7; border-radius: .4rem; color: #4e5e6c; }
 @media (max-width: 560px) {
   .site-header { align-items: flex-start; flex-direction: column; }

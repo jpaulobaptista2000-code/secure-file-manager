@@ -1,4 +1,4 @@
-"""Flask application with local accounts, HTTPS and encrypted uploads."""
+"""Flask application with local accounts, HTTPS and encrypted file management."""
 
 from datetime import timedelta
 from pathlib import Path
@@ -63,10 +63,15 @@ def create_app(test_config=None, instance_path=None):
             abort(400, description="Open this application using HTTPS.")
         if request.endpoint != "static":
             load_current_user()
-        if request.endpoint == "file_routes.upload":
-            # Authorize and set the body limit before Flask-WTF parses the upload.
+        if request.endpoint in {
+            "file_routes.upload", "file_routes.download",
+            "file_routes.confirm_delete", "file_routes.delete",
+        }:
+            # Authenticate before rate-limit keys or POST form parsing use the account.
             if g.user is None:
                 return redirect(url_for("auth.login"), code=303)
+        if request.endpoint == "file_routes.upload":
+            # Raise only the upload limit before Flask-WTF parses the body.
             request.max_content_length = app.config["UPLOAD_MAX_BYTES"] + 64 * 1024
 
     csrf.init_app(app)

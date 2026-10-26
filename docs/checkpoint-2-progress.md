@@ -124,10 +124,46 @@ the first account's file was not visible. These are student-reported functional
 checks. No automated browser test was run, and the Windows PDF-upload check
 remains unverified.
 
-## Still to implement
+## Step 4 — Owner-checked download and deletion
 
-- Ownership-checked download/decryption and deletion through the website.
-- End-to-end security testing and a clean-machine Windows demonstration of the
-  completed application.
+Downloads, deletion confirmation and deletion POSTs select the file by its ID
+and the authenticated account before accessing storage. Foreign and unknown
+IDs return the same 404 message. Downloads authenticate the entire bounded
+AES-GCM file in memory and return an attachment with no-store caching and
+content-sniffing protection. Invalid or missing stored data returns an error
+without plaintext. The step-3 encrypted format is unchanged.
 
-Checkpoint 2 is in progress; the file-management requirements are not complete.
+The interface offers an owner-only confirmation page. Deletion uses a CSRF-protected
+POST that checks ownership again. A database marker is committed before removing
+the key and ciphertext; the record and marker are removed after cleanup. Marked
+files cannot be downloaded. Interrupted deletions remain visible to their owner
+as pending, with a retry action that tolerates already missing files. The marker
+survives a process restart. This adds a table without resetting existing data.
+Downloads and deletion POSTs have per-account rate limits of 30 and 10 per minute.
+
+### Step 4 verification
+
+All 58 automated checks pass on Linux: 18 authentication, 21 upload/storage and
+19 download/deletion checks. New cases include exact TXT/PDF downloads, maximum
+file size, attachment/cache headers, direct cross-account URLs, anonymous and
+revoked sessions, forged parameters, ciphertext/key/metadata tampering, missing
+data, CSRF, harmless confirmation GETs, complete deletion, limits and retry after
+simulated initial/final database commits or filesystem failures.
+
+A separate HTTP-client check used a real HTTPS server with a trusted temporary
+test CA and certificate verification enabled. It upgraded a stage-3 database
+and downloaded an existing encrypted file unchanged, then uploaded/downloaded
+a fresh PDF. Direct foreign-account download/deletion attempts and a missing
+CSRF token were rejected. Confirmed deletion removed the metadata, ciphertext
+and key. A simulated interruption after persisting a deletion marker and
+removing the key remained blocked after a server restart; the owner's retry
+finished cleanup. Native Windows download/deletion validation remains pending.
+
+## Remaining verification and submission work
+
+- Complete the native Windows TXT/PDF download/deletion walkthrough.
+- Verify the final instructions on a clean Windows environment and review
+  the progress note and submission links.
+
+The core Checkpoint 2 functionality is implemented; final verification and
+submission preparation are still in progress.

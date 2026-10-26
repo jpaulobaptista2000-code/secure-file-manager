@@ -28,3 +28,11 @@ class StoredFile(db.Model):
     @property
     def uploaded_utc(self):
         return datetime.fromtimestamp(self.created_at, timezone.utc).strftime("%Y-%m-%d %H:%M")
+
+
+class FileDeletion(db.Model):
+    """A durable marker keeps interrupted deletions unavailable and retryable."""
+
+    __tablename__ = "file_deletions"
+
+    file_id = db.Column(db.String(32), db.ForeignKey("files.id"), primary_key=True)

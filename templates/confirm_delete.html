@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}Delete file · Secure File Manager{% endblock %}
+{% block content %}
+  <section class="auth-panel">
+    <p class="eyebrow">My files</p>
+    <h1 class="form-title">{{ 'Finish deleting this file?' if pending else 'Delete this file?' }}</h1>
+    <p class="delete-filename">{{ file.filename }}</p>
+    {% if pending %}
+      <p class="intro">An earlier deletion was interrupted. Retry to finish removing this file.</p>
+    {% else %}
+      <p class="intro">This removes the file from your account. You cannot undo this in the application.</p>
+    {% endif %}
+    <form class="actions" action="{{ url_for('file_routes.delete', file_id=file.id) }}" method="post">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button class="button button-danger" type="submit">{{ 'Retry delete' if pending else 'Delete file' }}</button>
+      <a class="button button-secondary" href="{{ url_for('files') }}">Cancel</a>
+    </form>
+  </section>
+{% endblock %}

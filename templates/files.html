@@ -21,14 +21,22 @@
       <div class="table-scroll">
         <table>
           <caption class="field-help">Only files belonging to your account are listed.</caption>
-          <thead><tr><th scope="col">Name</th><th scope="col">Size</th><th scope="col">Uploaded (UTC)</th><th scope="col">Status</th></tr></thead>
+          <thead><tr><th scope="col">Name</th><th scope="col">Size</th><th scope="col">Uploaded (UTC)</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead>
           <tbody>
             {% for file in page.items %}
               <tr>
                 <td class="file-name">{{ file.filename }}</td>
                 <td>{{ '%.1f'|format(file.size_bytes / 1024) }} KiB</td>
                 <td>{{ file.uploaded_utc }}</td>
-                <td><span class="file-status">Encrypted</span></td>
+                <td><span class="file-status">{{ 'Deletion pending' if file.id in pending_ids else 'Encrypted' }}</span></td>
+                <td>
+                  <div class="file-actions">
+                    {% if file.id not in pending_ids %}
+                      <a class="button button-secondary button-small" href="{{ url_for('file_routes.download', file_id=file.id) }}">Download</a>
+                    {% endif %}
+                    <a class="button button-danger button-small" href="{{ url_for('file_routes.confirm_delete', file_id=file.id) }}">{{ 'Retry delete' if file.id in pending_ids else 'Delete' }}</a>
+                  </div>
+                </td>
               </tr>
             {% endfor %}
           </tbody>
@@ -44,6 +52,6 @@
     {% else %}
       <p class="empty-state">No files on this page yet. Upload a document using the form above.</p>
     {% endif %}
-    <p class="field-help">Downloads and deletion will be added in the next stage.</p>
+    <p class="field-help">Downloads restore the original contents. Deleting a file removes it from this account.</p>
   </section>
 {% endblock %}

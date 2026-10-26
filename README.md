@@ -2,21 +2,21 @@
 
 ICS0027 Web Application Security - Project 1.
 
-Checkpoint 2, step 3: local HTTPS, accounts, server-side sessions, validated
-uploads, AES-256-GCM encryption and personal file lists are implemented.
-Download/decryption through the website and deletion are still planned.
-This is not yet the complete Checkpoint 2 submission.
+Checkpoint 2, step 4: local HTTPS, accounts, server-side sessions, validated
+uploads, AES-256-GCM encryption, personal file lists, authenticated downloads
+and confirmed deletion are implemented. The final Windows walkthrough and
+submission review are still pending.
 
 Read the [short design document](docs/architecture.md).
 The design document describes the planned system; the
 [progress note](docs/checkpoint-2-progress.md) records implementation progress.
 
-## Scope and planned features
+## Scope and implemented features
 
 - Register, log in and log out (implemented).
 - Upload and list the user's own PDF and text files (implemented).
 - Encrypt file contents on the server (implemented).
-- Download/decrypt and delete owned files (next stage).
+- Download/decrypt and delete owned files (implemented).
 
 File sharing and document previews are outside the initial scope.
 
@@ -30,8 +30,9 @@ File sharing and document previews are outside the initial scope.
 | POST | /logout | End the session (implemented) |
 | GET | /files | Upload form and owner-filtered, paginated file list (implemented) |
 | POST | /files/upload | Validate, encrypt and save one file (implemented) |
-| GET | /files/{file_id}/download | Download an owned file (planned) |
-| POST | /files/{file_id}/delete | Delete an owned file (planned) |
+| GET | /files/{file_id}/download | Authenticate/decrypt and download an owned file (implemented) |
+| GET | /files/{file_id}/confirm-delete | Show the owner's deletion confirmation (implemented) |
+| POST | /files/{file_id}/delete | Delete an owned file after a CSRF check (implemented) |
 
 ## Running locally
 
@@ -132,7 +133,8 @@ public hosting setup. The documented startup refuses to run without TLS files.
 On first startup, the application automatically creates its SQLite database,
 a random application secret, and private `storage/` and `keys/` folders inside
 `instance/`. No separate database installation or initialization command is needed.
-Upgrading from step 2 adds the file-metadata table and keeps existing accounts.
+Upgrading adds any missing file-metadata/deletion-marker tables and keeps
+existing accounts, keys and encrypted files. No database reset is needed.
 
 ### Updating an existing installation
 
@@ -179,8 +181,25 @@ are different cookie hosts, so each has a separate browser session.
 
 One nonempty PDF or UTF-8 TXT file is accepted per request, up to **5 MiB**
 (5,242,880 bytes). Uploading the same filename twice creates two independent
-files. The form currently has no download or delete buttons; those flows are
-the next stage.
+files. Use the **Download** and **Delete** controls beside each file.
+
+### Try download and deletion
+
+1. Sign in to the account that uploaded `teste.txt`. Choose **Download**, open
+   the saved copy and compare its contents with the original.
+2. Copy that file's Download link. In a private browser window, sign in with
+   the second account and paste the link. It must show **File not found**.
+   Signing out altogether must redirect the same link to **Sign in**.
+3. Return to the owner account and choose **Delete**. Check the filename on the
+   confirmation page. Choosing **Cancel** must leave the file available.
+4. Choose **Delete** again, then **Delete file**. The success message should
+   appear and the row should disappear. The old download link must no longer work.
+5. Repeat with a small test PDF. Restart the server before downloading it to
+   confirm that its account, metadata, contents and key persist.
+
+Use disposable test documents for this walkthrough. Deletion cannot be undone
+through the application; it does not erase existing downloads, backups or old
+disk blocks.
 
 ### How file storage works
 
@@ -219,6 +238,30 @@ created by that upload. A hard process crash can still leave orphan files;
 automatic reconciliation is not implemented. This local version has per-file
 size limits and an upload rate limit, but no total account-storage quota.
 
+### Download and deletion security
+
+- Every download, deletion confirmation and deletion POST selects the file by
+  both its identifier and the authenticated account ID. Unknown and foreign
+  file identifiers receive the same 404 response, before accessing storage.
+  Query parameters and form fields cannot choose the owner or storage path.
+- Downloads check the stored format, key length and bounded file size, then
+  authenticate the whole file with AES-GCM before returning any plaintext.
+  Missing files/keys or failed authentication return a generic error without
+  an attachment. Decrypted data stays in memory; no plaintext temporary file
+  is created by the download handler.
+- Downloads use `Content-Disposition: attachment`, `application/octet-stream`,
+  `X-Content-Type-Options: nosniff` and `Cache-Control: no-store`. Conditional
+  and range responses are disabled; successful requests return the full file.
+- The confirmation page is a read-only GET. The actual deletion is a CSRF-
+  protected POST and checks ownership again. It first commits a deletion marker
+  to SQLite, which blocks subsequent downloads. It then removes the key and
+  ciphertext, and finally removes the metadata and marker.
+- If deletion is interrupted after the marker is committed, **Deletion pending**
+  and **Retry delete** appear in the owner's list. Retrying tolerates already
+  missing files, so cleanup can finish after a restart or a handled disk/database
+  failure. A failed initial marker commit leaves the file intact. Automatic
+  background retries are not implemented. A download already in flight may finish.
+
 ### Authentication and local data
 
 - Passwords are salted Argon2id hashes produced by `argon2-cffi`.
@@ -228,7 +271,7 @@ size limits and an upload rate limit, but no total account-storage quota.
   enforced on the server. Login replaces the session ID; logout deletes the
   server session. Browser-side edits cannot grant authentication.
 - Flask-WTF checks CSRF tokens on every POST, including registration, login,
-  logout and uploads. Same-origin HTTPS referrers are retained for its additional check.
+  logout, uploads and deletion. Same-origin HTTPS referrers are retained for its additional check.
 - Flask-Limiter allows 5 POST submissions per minute per client IP on each of
   `/login` and `/register`, including successful submissions. This local version
   keeps rate-limit counters in memory; they reset when the server restarts and
@@ -239,8 +282,11 @@ size limits and an upload rate limit, but no total account-storage quota.
   64 KiB of multipart overhead, with at most 8 form parts and a 128 KiB field
   memory limit. Each individual file remains limited to 5 MiB. Other requests
   retain the 16 KiB limit. Dynamic pages use `Cache-Control: no-store`.
+- Downloads allow 30 requests per minute per account; deletion POSTs allow 10.
+  These use the same in-memory limiter and also count failed authorized requests.
 
-`instance/file_manager.sqlite3` holds accounts, sessions and file metadata. `instance/secret.key`
+`instance/file_manager.sqlite3` holds accounts, sessions, file metadata and pending
+deletion markers. `instance/secret.key`
 is a randomly generated application secret used to sign CSRF tokens; it is not
 a file-encryption key. Keep the instance folder between restarts. It is private,
 excluded from Git and not served by the website. Expired database sessions are
@@ -256,8 +302,10 @@ From the project folder:
 
 The tests use temporary databases and storage, leaving your accounts and files
 alone. They cover authentication, sessions, CSRF, ownership, type/size/path
-validation, rate limits, encrypted storage, byte-for-byte decryption, tampering,
-pagination and cleanup after simulated disk or database failures.
+validation, rate limits, encrypted storage, byte-for-byte downloads, tampering,
+pagination, cross-account URL access, CSRF-protected deletion and recovery from
+simulated disk/database failures. Expected failure tests may print error log
+lines; the final unittest result indicates whether the checks passed.
 
 ### Troubleshooting
 
@@ -271,10 +319,13 @@ pagination and cleanup after simulated disk or database failures.
 | Connection fails | Keep the server terminal open and include `https://` in the address. |
 | `GET /favicon.ico` returns 404 | The optional browser-tab icon has not been added. This does not prevent the page or HTTPS from working. |
 | A security-token error appears | Reopen the form to get a fresh token, use the same hostname, and submit again. |
-| Too many attempts (429) | Wait a minute before submitting another login, registration or upload. |
+| Too many attempts (429) | Wait a minute before retrying the action. |
 | Request too large (413) during upload | Choose one file no larger than 5 MiB and reopen the upload form. |
 | TXT encoding rejected | Save the document as UTF-8 in Notepad and retry. |
 | Storage permissions error on Windows | Use Python 3.13+ and keep the project under your own user profile on a filesystem with Windows ACLs, such as NTFS. |
+| File not found (404) | Check that you are signed in as the owner. Deleted files and files pending deletion cannot be downloaded. |
+| Download unavailable (503) | The ciphertext/key is missing, unreadable or failed authentication. Keep the existing data; restore a consistent private backup if available. |
+| Deletion incomplete (503) | Return to My files and retry deletion after resolving the storage/database problem. A pending file remains blocked from download. |
 
 If mkcert is installed but PowerShell cannot find it, first confirm the installation:
 
@@ -300,10 +351,10 @@ command lookup problem during the Windows setup on 26 October 2026.
 | `run.py` | Loads the local TLS certificate and starts the server. |
 | `app.py` | Configures the application, sessions, request checks and protected page. |
 | `auth.py` | Handles registration, login and logout. |
-| `models.py` | Defines users and file metadata stored in SQLite. |
+| `models.py` | Defines users, file metadata and deletion markers in SQLite. |
 | `security.py` | Handles password checks, the local secret and session expiry/rotation. |
-| `file_routes.py` | Validates uploads, assigns ownership and lists the current user's files. |
-| `encrypted_storage.py` | Creates private folders, encrypts contents and saves keys separately. |
+| `file_routes.py` | Validates uploads and checks ownership for listing, download and deletion. |
+| `encrypted_storage.py` | Manages private folders, authenticated encryption/decryption and retryable deletion. |
 | `upload_request.py` | Keeps size-limited uploads in memory before encryption. |
 | `extensions.py` | Connects the database, session, CSRF and rate-limit libraries. |
 | `templates/` | Defines the home page, forms and protected account page. |
@@ -313,8 +364,9 @@ command lookup problem during the Windows setup on 26 October 2026.
 
 ## Next steps
 
-1. Add ownership-checked download/decryption and deletion.
-2. Complete end-to-end security testing and the Checkpoint 2 progress note.
+1. Complete the student's Windows TXT/PDF download and deletion walkthrough.
+2. Verify the final setup on a clean Windows environment and review the
+   Checkpoint 2 progress note and submission links.
 
 Keep one meaningful commit for each completed increment.
 
@@ -331,3 +383,5 @@ Keep one meaningful commit for each completed increment.
 - [cryptography AES-GCM](https://cryptography.io/en/latest/hazmat/primitives/aead/#cryptography.hazmat.primitives.ciphers.aead.AESGCM)
 - [OWASP file-upload guidance](https://cheatsheetseries.owasp.org/cheatsheets/File_Upload_Cheat_Sheet.html)
 - [Python 3.13 directory permissions](https://docs.python.org/3.13/library/os.html#os.mkdir)
+- [OWASP object-level authorization](https://cheatsheetseries.owasp.org/cheatsheets/Insecure_Direct_Object_Reference_Prevention_Cheat_Sheet.html)
+- [Flask download responses](https://flask.palletsprojects.com/en/stable/api/#flask.send_file)

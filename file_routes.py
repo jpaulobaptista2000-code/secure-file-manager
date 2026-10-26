@@ -1,16 +1,20 @@
-"""Authenticated uploads and an owner-filtered list; downloads come next."""
+"""Owner-checked uploads, listing, downloads and confirmed deletion."""
 
+from io import BytesIO
 import re
 import secrets
 
-from flask import Blueprint, current_app, flash, g, redirect, render_template, request, url_for
+from flask import (
+    Blueprint, abort, current_app, flash, g, redirect, render_template,
+    request, send_file, url_for,
+)
 from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.utils import secure_filename
 
-from encrypted_storage import store_file
+from encrypted_storage import FileUnavailableError, decrypt_file, delete_file, store_file
 from extensions import db, limiter
-from models import StoredFile
+from models import FileDeletion, StoredFile
 from security import login_required
 
 file_routes = Blueprint("file_routes", __name__)
@@ -22,8 +26,11 @@ def render_file_list(error=None, status=200):
         .order_by(StoredFile.created_at.desc(), StoredFile.id.desc()),
         per_page=20, max_per_page=20, error_out=False,
     )
+    pending_ids = set(db.session.scalars(
+        db.select(FileDeletion.file_id).where(FileDeletion.file_id.in_([file.id for file in page.items]))
+    ))
     return render_template(
-        "files.html", page=page, error=error,
+        "files.html", page=page, pending_ids=pending_ids, error=error,
         upload_limit_mib=current_app.config["UPLOAD_MAX_BYTES"] // (1024 * 1024),
     ), status
 
@@ -83,4 +90,73 @@ def upload():
             message="The file could not be saved. Please try again later.",
         ), 503
     flash("File uploaded and encrypted successfully.", "success")
+    return redirect(url_for("files"), code=303)
+
+
+def owned_file(file_id, include_pending=False):
+    """Scope the lookup by the authenticated account before any storage access."""
+    if not re.fullmatch(r"[0-9a-f]{32}", file_id):
+        abort(404)
+    query = db.select(StoredFile).where(
+        StoredFile.id == file_id, StoredFile.owner_id == g.user.id,
+    )
+    if not include_pending:
+        query = query.where(~db.exists().where(FileDeletion.file_id == StoredFile.id))
+    record = db.session.execute(query).scalar_one_or_none()
+    if record is None:
+        abort(404)
+    return record
+
+
+@file_routes.errorhandler(404)
+def file_not_found(error):
+    return render_template(
+        "error.html", title="File not found",
+        message="This file is not available in your account.",
+    ), 404
+
+
+@file_routes.get("/files/<file_id>/download")
+@login_required
+@limiter.limit("30 per minute", key_func=lambda: str(g.user.id))
+def download(file_id):
+    record = owned_file(file_id)
+    try:
+        plaintext = decrypt_file(record)
+    except FileUnavailableError:
+        current_app.logger.error("A stored file could not be read or authenticated.")
+        return render_template(
+            "error.html", title="Download unavailable",
+            message="This file could not be opened safely. Please try again later.",
+        ), 503
+    # Never render uploads inline or write a decrypted temporary file.
+    return send_file(
+        BytesIO(plaintext), mimetype="application/octet-stream",
+        as_attachment=True, download_name=record.filename,
+        conditional=False, etag=False, max_age=0,
+    )
+
+
+@file_routes.get("/files/<file_id>/confirm-delete")
+@login_required
+def confirm_delete(file_id):
+    record = owned_file(file_id, include_pending=True)
+    pending = db.session.get(FileDeletion, record.id) is not None
+    return render_template("confirm_delete.html", file=record, pending=pending)
+
+
+@file_routes.post("/files/<file_id>/delete")
+@login_required
+@limiter.limit("10 per minute", key_func=lambda: str(g.user.id))
+def delete(file_id):
+    record = owned_file(file_id, include_pending=True)
+    try:
+        delete_file(record)
+    except (OSError, SQLAlchemyError):
+        current_app.logger.error("File deletion could not be completed.")
+        return render_template(
+            "error.html", title="Deletion incomplete",
+            message="The file could not be fully removed. Return to My files and try deleting it again.",
+        ), 503
+    flash("File deleted successfully.", "success")
     return redirect(url_for("files"), code=303)
