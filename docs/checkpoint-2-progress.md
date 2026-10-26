@@ -117,8 +117,12 @@ It preserved a pre-existing account database, uploaded a TXT file larger than
 original contents. The files and session survived a server restart. A second
 account could not see the first account's filenames.
 
-The student's native Windows upload walkthrough is still pending; no Windows
-upload or browser-visual verification result is claimed yet.
+On 27 October 2026, the student confirmed the Windows browser walkthrough:
+uploading a test TXT file displayed the success message and an `Encrypted` row.
+After signing out and creating/signing into a second account, the list was empty;
+the first account's file was not visible. These are student-reported functional
+checks. No automated browser test was run, and the Windows PDF-upload check
+remains unverified.
 
 ## Still to implement
 
