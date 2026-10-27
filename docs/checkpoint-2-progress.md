@@ -121,8 +121,8 @@ On 27 October 2026, the student confirmed the Windows browser walkthrough:
 uploading a test TXT file displayed the success message and an `Encrypted` row.
 After signing out and creating/signing into a second account, the list was empty;
 the first account's file was not visible. These are student-reported functional
-checks. No automated browser test was run, and the Windows PDF-upload check
-remains unverified.
+checks. No automated browser test was run. The Windows PDF-upload walkthrough
+was completed in step 4, below.
 
 ## Step 4 — Owner-checked download and deletion
 
@@ -157,11 +157,24 @@ a fresh PDF. Direct foreign-account download/deletion attempts and a missing
 CSRF token were rejected. Confirmed deletion removed the metadata, ciphertext
 and key. A simulated interruption after persisting a deletion marker and
 removing the key remained blocked after a server restart; the owner's retry
-finished cleanup. Native Windows download/deletion validation remains pending.
+finished cleanup.
+
+On 27 October 2026, the student completed the manual Windows browser checks:
+
+- Downloading the test TXT file returned the original sentence.
+- Cancelling deletion kept the TXT file in the list; confirming deletion removed it.
+- Uploading and downloading a PDF produced a document that opened with its
+  original content visible. The uploaded PDF was retained for further checks.
+- Opening that PDF's download URL while signed in as a second account displayed
+  `File not found` and did not download the file.
+
+These are student-reported functional checks on the Windows setup. The PDF
+content was checked visually, not by comparing file hashes. They supplement the
+automated checks above; they do not constitute a fresh Windows installation test.
 
 ## Remaining verification and submission work
 
-- Complete the native Windows TXT/PDF download/deletion walkthrough.
+- Confirm file persistence across an application restart in the Windows walkthrough.
 - Verify the final instructions on a clean Windows environment and review
   the progress note and submission links.
 
