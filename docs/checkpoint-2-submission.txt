@@ -1,0 +1,24 @@
+Secure Web-Based File Encryption and Management System
+Checkpoint 2 - Core requirements implemented (Week 9)
+Prepared: 27 October 2026
+
+Files to inspect:
+
+1. Short progress note: implemented requirements, verification and current limits
+https://github.com/jpaulobaptista2000-code/secure-file-manager/blob/main/docs/checkpoint-2-progress.md
+
+2. README: local setup, HTTPS certificate generation, run instructions and tests
+https://github.com/jpaulobaptista2000-code/secure-file-manager/blob/main/README.md#running-locally
+
+3. Public repository: running application's source code
+https://github.com/jpaulobaptista2000-code/secure-file-manager
+
+4. Incremental commit history
+https://github.com/jpaulobaptista2000-code/secure-file-manager/commits/main
+
+The application runs locally over HTTPS after following the README. Create a
+new test account in that local installation; credentials are not supplied.
+
+Verification: 58 automated tests passed on Linux. On Windows, 57 passed and one
+POSIX-only permission test was skipped. The Windows browser walkthrough and
+setup from a fresh clone and virtual environment were also completed.

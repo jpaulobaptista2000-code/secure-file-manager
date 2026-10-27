@@ -2,12 +2,12 @@
 
 ICS0027 Web Application Security - Project 1.
 
-Checkpoint 2, step 4: local HTTPS, accounts, server-side sessions, validated
-uploads, AES-256-GCM encryption, personal file lists, authenticated downloads
-and confirmed deletion are implemented. The student has confirmed the Windows
-TXT/PDF flows, rejection of another account's direct download link and PDF access
-after restarting the application. The Windows test suite passed with one expected
-POSIX-only skip. Fresh-setup verification and submission review are still pending.
+Checkpoint 2: local HTTPS, accounts, server-side sessions, validated uploads,
+AES-256-GCM encryption, personal file lists, authenticated downloads and confirmed
+deletion are implemented. Verification includes 58 passing Linux tests, 57
+passing Windows tests with one expected POSIX-only skip, Windows browser checks
+and setup from a fresh clone and virtual environment on the student's Windows PC.
+The Checkpoint 2 submission file is ready for upload to Moodle.
 
 Read the [short design document](docs/architecture.md).
 The design document describes the planned system; the
@@ -364,12 +364,17 @@ command lookup problem during the Windows setup on 26 October 2026.
 | `requirements.txt` | Lists the Python dependencies for installation. |
 | `.gitignore` | Keeps generated files and local secrets out of commits. |
 
-## Next steps
+## Checkpoint 2 submission
 
-1. Verify setup from a fresh clone and virtual environment on Windows.
-2. Review the Checkpoint 2 progress note and submission links.
+Download [checkpoint-2-submission.txt](docs/checkpoint-2-submission.txt) and upload
+it to the Checkpoint 2 Moodle assignment. It contains direct links to the short
+progress note, these run instructions, the public source repository and its
+commit history. Preparing or committing the file does not submit it to Moodle.
 
-Keep one meaningful commit for each completed increment.
+The [development and verification log](docs/checkpoint-2-development-log.md)
+retains the detailed implementation and test record. Continue using the original
+project directory for development; the separate fresh-clone directory was used
+to verify setup. Keep meaningful commits for future increments.
 
 ## Setup references
 
