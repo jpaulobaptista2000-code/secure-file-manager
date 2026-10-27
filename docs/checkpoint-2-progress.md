@@ -167,16 +167,24 @@ On 27 October 2026, the student completed the manual Windows browser checks:
   original content visible. The uploaded PDF was retained for further checks.
 - Opening that PDF's download URL while signed in as a second account displayed
   `File not found` and did not download the file.
+- After stopping and restarting the application, the owner could still see the
+  PDF, download it and open it normally.
 
 These are student-reported functional checks on the Windows setup. The PDF
 content was checked visually, not by comparing file hashes. They supplement the
 automated checks above; they do not constitute a fresh Windows installation test.
 
+The student also ran `python -m unittest discover -s tests -v` using the project's
+virtual environment on Windows with Python 3.13.2. The shared terminal output
+reports `Ran 58 tests in 15.119s` and `OK (skipped=1)`: 57 passed and one was
+skipped. The suite explicitly skips `test_private_storage_permissions` on Windows
+because it checks POSIX permission bits; Windows uses directory ACLs. This result
+does not independently verify those Windows ACLs.
+
 ## Remaining verification and submission work
 
-- Confirm file persistence across an application restart in the Windows walkthrough.
-- Verify the final instructions on a clean Windows environment and review
-  the progress note and submission links.
+- Verify setup from a fresh clone and virtual environment on Windows.
+- Review the progress note and submission links.
 
 The core Checkpoint 2 functionality is implemented; final verification and
 submission preparation are still in progress.

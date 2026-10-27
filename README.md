@@ -5,8 +5,9 @@ ICS0027 Web Application Security - Project 1.
 Checkpoint 2, step 4: local HTTPS, accounts, server-side sessions, validated
 uploads, AES-256-GCM encryption, personal file lists, authenticated downloads
 and confirmed deletion are implemented. The student has confirmed the Windows
-TXT/PDF flows and rejection of another account's direct download link. The Windows
-restart check, clean-setup verification and submission review are still pending.
+TXT/PDF flows, rejection of another account's direct download link and PDF access
+after restarting the application. The Windows test suite passed with one expected
+POSIX-only skip. Fresh-setup verification and submission review are still pending.
 
 Read the [short design document](docs/architecture.md).
 The design document describes the planned system; the
@@ -365,10 +366,8 @@ command lookup problem during the Windows setup on 26 October 2026.
 
 ## Next steps
 
-1. Confirm that the uploaded PDF remains downloadable after restarting the
-   application on Windows.
-2. Verify the final setup on a clean Windows environment and review the
-   Checkpoint 2 progress note and submission links.
+1. Verify setup from a fresh clone and virtual environment on Windows.
+2. Review the Checkpoint 2 progress note and submission links.
 
 Keep one meaningful commit for each completed increment.
 
