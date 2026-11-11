@@ -3,6 +3,7 @@
 from io import BytesIO
 import re
 import secrets
+import logging
 
 from flask import (
     Blueprint, abort, current_app, flash, g, redirect, render_template,
@@ -12,6 +13,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from werkzeug.exceptions import RequestEntityTooLarge
 from werkzeug.utils import secure_filename
 
+from audit import audit_event
 from encrypted_storage import FileUnavailableError, decrypt_file, delete_file, store_file
 from extensions import db, limiter
 from models import FileDeletion, StoredFile
@@ -72,10 +74,12 @@ def validate_upload(upload):
 def upload():
     incoming = list(request.files.items(multi=True))
     if len(incoming) != 1 or incoming[0][0] != "file":
+        audit_event("upload_rejected", level=logging.WARNING, status=400, reason="file_count")
         return render_file_list("Choose exactly one PDF or TXT file.", 400)
     try:
         filename, content_type, data = validate_upload(incoming[0][1])
     except ValueError as error:
+        audit_event("upload_rejected", level=logging.WARNING, status=400, reason="validation")
         return render_file_list(str(error), 400)
     record = StoredFile(
         id=secrets.token_hex(16), owner_id=g.user.id, filename=filename,
@@ -84,11 +88,12 @@ def upload():
     try:
         store_file(record, data)
     except (OSError, SQLAlchemyError):
-        current_app.logger.error("Upload could not be saved; storage or database operation failed.")
+        audit_event("upload_failed", level=logging.ERROR, status=503, file_id=record.id)
         return render_template(
             "error.html", title="Upload could not be saved",
             message="The file could not be saved. Please try again later.",
         ), 503
+    audit_event("file_uploaded", status=303, file_id=record.id)
     flash("File uploaded and encrypted successfully.", "success")
     return redirect(url_for("files"), code=303)
 
@@ -96,6 +101,7 @@ def upload():
 def owned_file(file_id, include_pending=False):
     """Scope the lookup by the authenticated account before any storage access."""
     if not re.fullmatch(r"[0-9a-f]{32}", file_id):
+        audit_event("file_access_denied", level=logging.WARNING, status=404, reason="invalid_id")
         abort(404)
     query = db.select(StoredFile).where(
         StoredFile.id == file_id, StoredFile.owner_id == g.user.id,
@@ -104,6 +110,8 @@ def owned_file(file_id, include_pending=False):
         query = query.where(~db.exists().where(FileDeletion.file_id == StoredFile.id))
     record = db.session.execute(query).scalar_one_or_none()
     if record is None:
+        audit_event("file_access_denied", level=logging.WARNING, status=404,
+                    reason="not_available_to_user", file_id=file_id)
         abort(404)
     return record
 
@@ -124,12 +132,13 @@ def download(file_id):
     try:
         plaintext = decrypt_file(record)
     except FileUnavailableError:
-        current_app.logger.error("A stored file could not be read or authenticated.")
+        audit_event("download_failed", level=logging.ERROR, status=503, file_id=record.id)
         return render_template(
             "error.html", title="Download unavailable",
             message="This file could not be opened safely. Please try again later.",
         ), 503
     # Never render uploads inline or write a decrypted temporary file.
+    audit_event("file_download_prepared", status=200, file_id=record.id)
     return send_file(
         BytesIO(plaintext), mimetype="application/octet-stream",
         as_attachment=True, download_name=record.filename,
@@ -153,10 +162,11 @@ def delete(file_id):
     try:
         delete_file(record)
     except (OSError, SQLAlchemyError):
-        current_app.logger.error("File deletion could not be completed.")
+        audit_event("delete_failed", level=logging.ERROR, status=503, file_id=file_id)
         return render_template(
             "error.html", title="Deletion incomplete",
             message="The file could not be fully removed. Return to My files and try deleting it again.",
         ), 503
+    audit_event("file_deleted", status=303, file_id=file_id)
     flash("File deleted successfully.", "success")
     return redirect(url_for("files"), code=303)

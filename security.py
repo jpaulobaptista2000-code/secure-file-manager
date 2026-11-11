@@ -10,6 +10,7 @@ from argon2 import PasswordHasher, Type
 from argon2.exceptions import InvalidHashError, VerificationError
 from flask import current_app, g, redirect, session, url_for
 
+from audit import audit_event
 from extensions import db
 from models import User
 
@@ -55,11 +56,14 @@ def load_current_user():
         now - login_at >= current_app.config["AUTH_ABSOLUTE_SECONDS"]
         or now - last_seen >= current_app.config["AUTH_IDLE_SECONDS"]
     ):
+        g.audit_user_id = user_id
+        audit_event("session_expired")
         session.clear()
         return
 
     g.user = db.session.get(User, user_id)
     if g.user is None:
+        audit_event("session_user_missing")
         session.clear()
         return
     session["last_seen"] = now
@@ -79,6 +83,7 @@ def login_required(view):
     @wraps(view)
     def protected_view(*args, **kwargs):
         if g.user is None:
+            audit_event("authentication_required", status=303)
             return redirect(url_for("auth.login"), code=303)
         return view(*args, **kwargs)
 

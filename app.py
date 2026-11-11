@@ -2,10 +2,14 @@
 
 from datetime import timedelta
 from pathlib import Path
+import logging
+import secrets
 
 from flask import Flask, abort, g, redirect, render_template, request, url_for
 from flask_wtf.csrf import CSRFError
+from werkzeug.exceptions import HTTPException
 
+from audit import audit_event, init_audit_logging
 from auth import auth
 from encrypted_storage import init_storage
 from extensions import csrf, db, limiter, server_sessions
@@ -21,6 +25,7 @@ def create_app(test_config=None, instance_path=None):
         TRUSTED_HOSTS=["localhost", "127.0.0.1", "[::1]"],
         SQLALCHEMY_DATABASE_URI="sqlite:///file_manager.sqlite3",
         SQLALCHEMY_TRACK_MODIFICATIONS=False,
+        SQLALCHEMY_ENGINE_OPTIONS={"hide_parameters": True},
         SESSION_TYPE="sqlalchemy",
         SESSION_SQLALCHEMY_TABLE="sessions",
         SESSION_COOKIE_NAME="sfm_session",
@@ -49,6 +54,7 @@ def create_app(test_config=None, instance_path=None):
     if not app.config.get("SECRET_KEY"):
         app.config["SECRET_KEY"] = load_or_create_secret(app.instance_path)
     init_storage(app)
+    init_audit_logging(app)
 
     db.init_app(app)
     app.config["SESSION_SQLALCHEMY"] = db
@@ -58,17 +64,22 @@ def create_app(test_config=None, instance_path=None):
 
     @app.before_request
     def check_request_and_session():
+        g.request_id = secrets.token_hex(16)
+        g.audit_user_id = None
         g.user = None
         if not request.is_secure:
             abort(400, description="Open this application using HTTPS.")
         if request.endpoint != "static":
             load_current_user()
+            if g.user is not None:
+                g.audit_user_id = g.user.id
         if request.endpoint in {
             "file_routes.upload", "file_routes.download",
             "file_routes.confirm_delete", "file_routes.delete",
         }:
             # Authenticate before rate-limit keys or POST form parsing use the account.
             if g.user is None:
+                audit_event("authentication_required", level=logging.WARNING, status=303)
                 return redirect(url_for("auth.login"), code=303)
         if request.endpoint == "file_routes.upload":
             # Raise only the upload limit before Flask-WTF parses the body.
@@ -92,6 +103,7 @@ def create_app(test_config=None, instance_path=None):
 
     @app.errorhandler(CSRFError)
     def invalid_form(error):
+        audit_event("csrf_rejected", level=logging.WARNING, status=400)
         return render_template(
             "error.html", title="Please reopen the form",
             message="This form is missing a valid security token or has expired. Open the page again and retry.",
@@ -99,6 +111,7 @@ def create_app(test_config=None, instance_path=None):
 
     @app.errorhandler(429)
     def too_many_attempts(error):
+        audit_event("rate_limit_exceeded", level=logging.WARNING, status=429)
         return render_template(
             "error.html", title="Too many attempts",
             message="Please wait a minute before trying again.",
@@ -106,6 +119,7 @@ def create_app(test_config=None, instance_path=None):
 
     @app.errorhandler(413)
     def oversized_request(error):
+        audit_event("request_too_large", level=logging.WARNING, status=413)
         if request.endpoint == "file_routes.upload":
             message = "Choose one file of at most 5 MiB and submit it using the upload form."
         else:
@@ -115,8 +129,34 @@ def create_app(test_config=None, instance_path=None):
             message=message,
         ), 413
 
+    @app.errorhandler(HTTPException)
+    def invalid_request(error):
+        # Keep protocol headers such as Allow on a 405, but do not reflect the
+        # original description, URL, input, or internal exception into HTML.
+        response = error.get_response()
+        response.data = render_template(
+            "error.html", title=error.name,
+            message="The request could not be completed. Check the address and try again.",
+        )
+        response.content_type = "text/html; charset=utf-8"
+        return response
+
+    @app.errorhandler(500)
+    def internal_error(error):
+        db.session.rollback()
+        g.user = None
+        # Flask logs the original exception through SecurityFormatter. Its
+        # message/traceback is omitted because it may contain sensitive values.
+        return render_template(
+            "error.html", title="Something went wrong",
+            message="The request could not be completed safely. Please try again later.",
+        ), 500
+
     @app.after_request
     def add_security_headers(response):
+        if not getattr(g, "request_id", None):
+            g.request_id = secrets.token_hex(16)
+        response.headers["X-Request-ID"] = g.request_id
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'none'; "
@@ -132,6 +172,7 @@ def create_app(test_config=None, instance_path=None):
         response.headers["Referrer-Policy"] = "same-origin"
         if request.endpoint != "static":
             response.headers["Cache-Control"] = "no-store"
+            audit_event("request_completed", status=response.status_code)
         return response
 
     return app

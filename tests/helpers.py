@@ -20,6 +20,9 @@ def cleanup():
         with _app.app_context():
             db.session.remove()
             db.engine.dispose()
+        for handler in _app.logger.handlers[:]:
+            _app.logger.removeHandler(handler)
+            handler.close()
     if _directory is not None:
         _directory.cleanup()
 

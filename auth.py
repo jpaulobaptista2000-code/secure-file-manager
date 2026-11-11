@@ -1,6 +1,7 @@
 """Registration, login and logout."""
 
 import re
+import logging
 
 from flask import (
     Blueprint, current_app, flash, g, redirect, render_template,
@@ -8,6 +9,7 @@ from flask import (
 )
 from sqlalchemy.exc import IntegrityError
 
+from audit import audit_event
 from extensions import db, limiter
 from models import User
 from security import (
@@ -47,12 +49,15 @@ def register():
                 error = "That username is unavailable. Choose another one."
                 status = 409
             else:
+                g.audit_user_id = user.id
+                audit_event("registration_succeeded", status=303)
                 session.clear()
                 flash("Account created. You can now sign in.", "success")
                 current_app.session_interface.regenerate(session)
                 return redirect(url_for("auth.login"), code=303)
         if status == 200:
             status = 400
+        audit_event("registration_rejected", level=logging.WARNING, status=status)
     return render_template("register.html", error=error, username=username), status
 
 
@@ -77,13 +82,17 @@ def login():
                     user.password_hash = password_hasher.hash(password)
                     db.session.commit()
                 start_authenticated_session(user)
+                g.audit_user_id = user.id
+                audit_event("login_succeeded", status=303)
                 return redirect(url_for("files"), code=303)
         error = "Incorrect username or password."
+        audit_event("login_failed", level=logging.WARNING, status=401)
     return render_template("login.html", error=error, username=username), 401 if error else 200
 
 
 @auth.post("/logout")
 def logout():
     # Flask-Session deletes the database session and cookie when saving an empty session.
+    audit_event("logout", status=303)
     session.clear()
     return redirect(url_for("auth.login"), code=303)

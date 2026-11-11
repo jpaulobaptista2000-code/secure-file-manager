@@ -1,6 +1,7 @@
 """AES-256-GCM storage. Only ciphertext and random keys are written to disk."""
 
 import json
+import logging
 import os
 from pathlib import Path
 import re
@@ -12,6 +13,7 @@ from cryptography.exceptions import InvalidTag
 from flask import current_app
 from sqlalchemy.dialects.sqlite import insert
 
+from audit import audit_event
 from extensions import db
 from models import FileDeletion, StoredFile
 
@@ -27,7 +29,7 @@ def init_storage(app):
     # Python 3.13 added Windows ACL handling for directory mode 0o700.
     if os.name == "nt" and sys.version_info < (3, 13):
         raise RuntimeError("Use Python 3.13 or newer on Windows for private storage permissions.")
-    for name in ("storage", "keys"):
+    for name in ("storage", "keys", "logs"):
         directory = Path(app.instance_path) / name
         if directory.is_symlink() or directory.is_junction():
             raise RuntimeError("Private storage folders must not be symbolic links or junctions.")
@@ -83,7 +85,7 @@ def store_file(record, plaintext):
                     try:
                         path.unlink(missing_ok=True)
                     except OSError:
-                        current_app.logger.error("Could not remove an incomplete encrypted upload.")
+                        audit_event("upload_cleanup_failed", level=logging.ERROR, file_id=record.id)
 
 
 def decrypt_file(record):
