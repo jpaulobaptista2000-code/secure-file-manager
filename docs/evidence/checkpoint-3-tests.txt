@@ -1,0 +1,104 @@
+Checkpoint 3 automated security test evidence
+Tested implementation: 4ef254099c14f778555181ce17b16885d387fd2c
+Executed UTC: 2026-11-11T18:14:13.653174+00:00
+Environment: Linux Python 3.12.14
+Packages: Flask==3.1.3, SQLAlchemy==2.1.6, cryptography==50.0.2, Flask-WTF==1.3.0, Flask-Session==0.8.0
+Scope: isolated Flask test client, temporary database/storage/logs; not a browser or network TLS test.
+Equivalent command: python -m unittest discover -s tests -v
+The known Flask-Session datetime.utcnow DeprecationWarning is omitted for readability.
+
+test_absolute_expiry_applies_even_with_recent_activity (test_auth.AuthenticationTests.test_absolute_expiry_applies_even_with_recent_activity) ... ok
+test_credential_check_exception_never_grants_access (test_auth.AuthenticationTests.test_credential_check_exception_never_grants_access) ... ok
+test_duplicate_username_is_case_insensitive (test_auth.AuthenticationTests.test_duplicate_username_is_case_insensitive) ... ok
+test_expired_database_session_is_rejected (test_auth.AuthenticationTests.test_expired_database_session_is_rejected) ... ok
+test_forged_cookie_cannot_create_authenticated_session (test_auth.AuthenticationTests.test_forged_cookie_cannot_create_authenticated_session) ... ok
+test_http_and_large_requests_are_rejected_and_private_files_not_served (test_auth.AuthenticationTests.test_http_and_large_requests_are_rejected_and_private_files_not_served) ... ok
+test_idle_expiry_is_enforced_server_side (test_auth.AuthenticationTests.test_idle_expiry_is_enforced_server_side) ... ok
+test_invalid_password_hash_fails_closed (test_auth.AuthenticationTests.test_invalid_password_hash_fails_closed) ... ok
+test_login_rate_limit_survives_new_browser_sessions (test_auth.AuthenticationTests.test_login_rate_limit_survives_new_browser_sessions) ... ok
+test_login_rotates_session_and_prelogin_cookie_cannot_access_files (test_auth.AuthenticationTests.test_login_rotates_session_and_prelogin_cookie_cannot_access_files) ... ok
+test_logout_revokes_cookie_replay_and_protected_access (test_auth.AuthenticationTests.test_logout_revokes_cookie_replay_and_protected_access) ... ok
+test_missing_csrf_rejected_for_all_state_changes (test_auth.AuthenticationTests.test_missing_csrf_rejected_for_all_state_changes) ... ok
+test_other_sessions_csrf_token_and_cross_site_referer_rejected (test_auth.AuthenticationTests.test_other_sessions_csrf_token_and_cross_site_referer_rejected) ... ok
+test_registration_hashes_password_with_unique_salts (test_auth.AuthenticationTests.test_registration_hashes_password_with_unique_salts) ... ok
+test_server_validates_registration_without_browser_checks (test_auth.AuthenticationTests.test_server_validates_registration_without_browser_checks) ... ok
+test_session_data_and_password_are_not_in_cookie (test_auth.AuthenticationTests.test_session_data_and_password_are_not_in_cookie) ... ok
+test_sql_and_html_payloads_do_not_grant_access_or_render_as_markup (test_auth.AuthenticationTests.test_sql_and_html_payloads_do_not_grant_access_or_render_as_markup) ... ok
+test_unknown_user_and_wrong_password_have_same_error (test_auth.AuthenticationTests.test_unknown_user_and_wrong_password_have_same_error) ... ok
+test_bad_request_and_wrong_method_keep_safe_pages_and_http_semantics (test_checkpoint3.Checkpoint3Tests.test_bad_request_and_wrong_method_keep_safe_pages_and_http_semantics)
+Errors: 400/404/405 responses stay generic and preserve the Allow header. ... ok
+test_cross_site_delete_with_valid_token_is_rejected (test_checkpoint3.Checkpoint3Tests.test_cross_site_delete_with_valid_token_is_rejected)
+CSRF: valid token plus https://attacker.example/ Referer returns 400. ... ok
+test_csrf_missing_forged_and_foreign_tokens_block_every_post_form (test_checkpoint3.Checkpoint3Tests.test_csrf_missing_forged_and_foreign_tokens_block_every_post_form)
+CSRF: all five state-changing forms reject missing/forged/foreign tokens. ... ok
+test_foreign_file_access_is_denied_and_recorded_without_disclosing_its_name (test_checkpoint3.Checkpoint3Tests.test_foreign_file_access_is_denied_and_recorded_without_disclosing_its_name)
+IDOR: Bob's valid session/token cannot download, confirm or delete Alice's file. ... ok
+test_html_in_a_text_upload_is_only_downloaded_as_an_attachment (test_checkpoint3.Checkpoint3Tests.test_html_in_a_text_upload_is_only_downloaded_as_an_attachment)
+XSS: HTML in a TXT body is stored as data and downloaded, never previewed. ... ok
+test_log_rotation_is_bounded_and_keeps_valid_json (test_checkpoint3.Checkpoint3Tests.test_log_rotation_is_bounded_and_keeps_valid_json)
+Logs: size-based rotation retains only the configured backup count. ... ok
+test_log_write_failure_does_not_break_login_or_print_sensitive_details (test_checkpoint3.Checkpoint3Tests.test_log_write_failure_does_not_break_login_or_print_sensitive_details)
+Logs: simulated full-disk failure keeps login working and emits a safe warning. ... ok
+test_real_login_query_sends_username_as_a_bound_parameter (test_checkpoint3.Checkpoint3Tests.test_real_login_query_sends_username_as_a_bound_parameter)
+SQLi defence: capture the executed login query and its separate parameters. ... ok
+test_reflected_xss_is_text_not_an_html_element (test_checkpoint3.Checkpoint3Tests.test_reflected_xss_is_text_not_an_html_element)
+XSS: a username containing an img/onerror payload creates no img element. ... ok
+test_request_id_is_generated_by_the_server (test_checkpoint3.Checkpoint3Tests.test_request_id_is_generated_by_the_server)
+Logs: a supplied X-Request-ID cannot impersonate another log correlation ID. ... ok
+test_security_log_has_no_public_route (test_checkpoint3.Checkpoint3Tests.test_security_log_has_no_public_route) ... ok
+test_security_log_has_private_posix_permissions (test_checkpoint3.Checkpoint3Tests.test_security_log_has_private_posix_permissions) ... ok
+test_sql_injection_payloads_cannot_authenticate_or_remove_accounts (test_checkpoint3.Checkpoint3Tests.test_sql_injection_payloads_cannot_authenticate_or_remove_accounts)
+SQLi: boolean, comment and DROP TABLE login inputs do not grant access. ... ok
+test_stored_xss_is_escaped_on_both_filename_pages (test_checkpoint3.Checkpoint3Tests.test_stored_xss_is_escaped_on_both_filename_pages)
+XSS: even poisoned database metadata is escaped in list and delete views. ... ok
+test_structured_logs_correlate_events_and_omit_secrets_and_untrusted_input (test_checkpoint3.Checkpoint3Tests.test_structured_logs_correlate_events_and_omit_secrets_and_untrusted_input)
+Logs: passwords, cookies, CSRF tokens, filenames, bodies and CRLF input are absent. ... ok
+test_unexpected_exception_returns_generic_500_and_redacted_json_log (test_checkpoint3.Checkpoint3Tests.test_unexpected_exception_returns_generic_500_and_redacted_json_log)
+Errors: a simulated exception containing secrets leaks neither text nor traceback. ... ok
+test_anonymous_and_revoked_sessions_cannot_use_file_links (test_file_actions.FileActionTests.test_anonymous_and_revoked_sessions_cannot_use_file_links) ... ok
+test_confirmation_escapes_displayed_metadata (test_file_actions.FileActionTests.test_confirmation_escapes_displayed_metadata) ... ok
+test_confirmation_get_does_not_delete_and_get_delete_is_rejected (test_file_actions.FileActionTests.test_confirmation_get_does_not_delete_and_get_delete_is_rejected) ... ok
+test_deletion_requires_valid_csrf_and_same_origin (test_file_actions.FileActionTests.test_deletion_requires_valid_csrf_and_same_origin) ... ok
+test_download_and_delete_rate_limits (test_file_actions.FileActionTests.test_download_and_delete_rate_limits) ... ok
+test_failed_final_database_commit_remains_retryable (test_file_actions.FileActionTests.test_failed_final_database_commit_remains_retryable) ... ok
+test_failed_initial_database_commit_leaves_file_unchanged (test_file_actions.FileActionTests.test_failed_initial_database_commit_leaves_file_unchanged) ... ok
+test_foreign_account_cannot_download_confirm_or_delete_even_with_valid_csrf (test_file_actions.FileActionTests.test_foreign_account_cannot_download_confirm_or_delete_even_with_valid_csrf) ... ok
+test_interrupted_disk_deletion_blocks_download_and_can_be_retried (test_file_actions.FileActionTests.test_interrupted_disk_deletion_blocks_download_and_can_be_retried) ... ok
+test_maximum_size_file_downloads_without_truncation (test_file_actions.FileActionTests.test_maximum_size_file_downloads_without_truncation) ... ok
+test_metadata_tampering_fails_authentication (test_file_actions.FileActionTests.test_metadata_tampering_fails_authentication) ... ok
+test_missing_private_files_fail_safely_and_can_still_be_deleted (test_file_actions.FileActionTests.test_missing_private_files_fail_safely_and_can_still_be_deleted) ... ok
+test_pending_deletion_does_not_give_another_user_access (test_file_actions.FileActionTests.test_pending_deletion_does_not_give_another_user_access) ... ok
+test_query_and_form_fields_cannot_select_another_file_or_owner (test_file_actions.FileActionTests.test_query_and_form_fields_cannot_select_another_file_or_owner) ... ok
+test_range_and_cache_headers_do_not_bypass_full_authenticated_download (test_file_actions.FileActionTests.test_range_and_cache_headers_do_not_bypass_full_authenticated_download) ... ok
+test_successful_deletion_removes_both_private_files_and_database_records (test_file_actions.FileActionTests.test_successful_deletion_removes_both_private_files_and_database_records) ... ok
+test_tampered_ciphertext_nonce_header_and_key_never_return_plaintext (test_file_actions.FileActionTests.test_tampered_ciphertext_nonce_header_and_key_never_return_plaintext) ... ok
+test_txt_and_pdf_download_exact_original_bytes_as_attachments (test_file_actions.FileActionTests.test_txt_and_pdf_download_exact_original_bytes_as_attachments) ... ok
+test_unknown_and_malformed_ids_are_not_interpreted_as_paths_or_sql (test_file_actions.FileActionTests.test_unknown_and_malformed_ids_are_not_interpreted_as_paths_or_sql) ... ok
+test_anonymous_upload_is_rejected_before_file_parsing (test_uploads.UploadTests.test_anonymous_upload_is_rejected_before_file_parsing) ... ok
+test_browser_content_type_cannot_make_fake_pdf_valid (test_uploads.UploadTests.test_browser_content_type_cannot_make_fake_pdf_valid) ... ok
+test_ciphertext_nonce_key_and_metadata_tampering_fail_authentication (test_uploads.UploadTests.test_ciphertext_nonce_key_and_metadata_tampering_fail_authentication) ... ok
+test_database_failure_removes_new_ciphertext_and_key (test_uploads.UploadTests.test_database_failure_removes_new_ciphertext_and_key) ... ok
+test_file_size_boundary_is_enforced_without_plaintext_tempfiles (test_uploads.UploadTests.test_file_size_boundary_is_enforced_without_plaintext_tempfiles) ... ok
+test_filename_collision_cannot_overwrite_existing_storage (test_uploads.UploadTests.test_filename_collision_cannot_overwrite_existing_storage) ... ok
+test_identical_names_and_content_get_independent_keys_and_nonces (test_uploads.UploadTests.test_identical_names_and_content_get_independent_keys_and_nonces) ... ok
+test_invalid_extensions_empty_and_binary_files_are_rejected (test_uploads.UploadTests.test_invalid_extensions_empty_and_binary_files_are_rejected) ... ok
+test_listing_pagination_is_owner_scoped (test_uploads.UploadTests.test_listing_pagination_is_owner_scoped) ... ok
+test_missing_and_multiple_files_are_rejected (test_uploads.UploadTests.test_missing_and_multiple_files_are_rejected) ... ok
+test_owner_fields_are_ignored_and_other_accounts_cannot_list_files (test_uploads.UploadTests.test_owner_fields_are_ignored_and_other_accounts_cannot_list_files) ... ok
+test_partial_disk_failure_removes_the_new_key (test_uploads.UploadTests.test_partial_disk_failure_removes_the_new_key) ... ok
+test_path_traversal_and_windows_paths_are_rejected (test_uploads.UploadTests.test_path_traversal_and_windows_paths_are_rejected) ... ok
+test_pdf_and_utf8_bom_are_accepted (test_uploads.UploadTests.test_pdf_and_utf8_bom_are_accepted) ... ok
+test_private_storage_permissions (test_uploads.UploadTests.test_private_storage_permissions) ... ok
+test_request_size_and_part_count_are_bounded (test_uploads.UploadTests.test_request_size_and_part_count_are_bounded) ... ok
+test_storage_and_keys_have_no_public_route (test_uploads.UploadTests.test_storage_and_keys_have_no_public_route) ... ok
+test_text_is_encrypted_on_disk_and_decrypts_exactly (test_uploads.UploadTests.test_text_is_encrypted_on_disk_and_decrypts_exactly) ... ok
+test_upload_rate_limit_is_per_account (test_uploads.UploadTests.test_upload_rate_limit_is_per_account) ... ok
+test_upload_requires_csrf_and_same_origin (test_uploads.UploadTests.test_upload_requires_csrf_and_same_origin) ... ok
+test_uploaded_names_are_normalized_and_list_output_is_escaped (test_uploads.UploadTests.test_uploaded_names_are_normalized_and_list_output_is_escaped) ... ok
+
+----------------------------------------------------------------------
+Ran 74 tests in 11.436s
+
+OK
+
+Results: 74 run; 0 failures; 0 errors; 0 skipped.

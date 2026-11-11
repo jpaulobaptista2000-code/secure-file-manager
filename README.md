@@ -2,16 +2,23 @@
 
 ICS0027 Web Application Security - Project 1.
 
-Checkpoint 2: local HTTPS, accounts, server-side sessions, validated uploads,
-AES-256-GCM encryption, personal file lists, authenticated downloads and confirmed
-deletion are implemented. Verification includes 58 passing Linux tests, 57
-passing Windows tests with one expected POSIX-only skip, Windows browser checks
-and setup from a fresh clone and virtual environment on the student's Windows PC.
-The Checkpoint 2 submission file is ready for upload to Moodle.
+Checkpoint 3 development branch: the core application is implemented, with
+private JSON security logs, safe error responses and documented attack tests.
+The current automated result is **74 passing tests on Linux**. Verification of
+this branch on Windows is pending; the earlier Checkpoint 2 Windows results
+remain recorded separately.
+
+The submitted Checkpoint 2 version remains on `main` at commit `ed158e3`.
+Checkpoint 3 work is on `checkpoint-3`; it has not been merged into `main`.
+
+- [Checkpoint 3 progress and remaining checks](docs/checkpoint-3-progress.md)
+- [Security test cases, payloads and results](docs/checkpoint-3-security-tests.md)
+- [Draft report](docs/checkpoint-3-report-draft.md)
+- [Captured automated test output](docs/evidence/checkpoint-3-tests.txt)
 
 Read the [short design document](docs/architecture.md).
 The design document describes the planned system; the
-[progress note](docs/checkpoint-2-progress.md) records implementation progress.
+[Checkpoint 2 progress note](docs/checkpoint-2-progress.md) records that submission.
 
 ## Scope and implemented features
 
@@ -73,13 +80,21 @@ Run these commands once to create a new local copy:
 Set-Location $env:USERPROFILE
 New-Item -ItemType Directory -Force Projects | Out-Null
 Set-Location Projects
-git clone https://github.com/jpaulobaptista2000-code/secure-file-manager.git
+git clone --branch checkpoint-3 https://github.com/jpaulobaptista2000-code/secure-file-manager.git
 Set-Location secure-file-manager
 ```
 
 If you already cloned the repository, open PowerShell in that folder instead.
-Run `git status` first. If the working tree is clean, use `git pull --ff-only`
-to get the latest version. Preserve any local changes before updating.
+Run `git status` first and preserve any local changes. With a clean working tree,
+switch to the Checkpoint 3 branch once:
+
+```powershell
+git fetch origin
+git switch --track origin/checkpoint-3
+```
+
+If that local branch already exists, use `git switch checkpoint-3` instead.
+Later updates on that branch use `git pull --ff-only`.
 
 ### 3. Install the Python dependencies
 
@@ -133,15 +148,16 @@ interactive debugger disabled. This is Flask's local development server, not a
 public hosting setup. The documented startup refuses to run without TLS files.
 
 On first startup, the application automatically creates its SQLite database,
-a random application secret, and private `storage/` and `keys/` folders inside
+a random application secret, and private `storage/`, `keys/` and `logs/` folders inside
 `instance/`. No separate database installation or initialization command is needed.
-Upgrading adds any missing file-metadata/deletion-marker tables and keeps
-existing accounts, keys and encrypted files. No database reset is needed.
+Checkpoint 3 adds the log folder and keeps existing accounts, keys, encrypted
+files and the database schema. No database reset is needed.
 
 ### Updating an existing installation
 
 Stop the server with Ctrl+C, and run the following in the project folder. Check
-`git status` first; preserve any local source-code changes before pulling.
+`git status` first; preserve any local source-code changes before pulling, and
+make sure the current branch is `checkpoint-3` using the instructions above.
 
 ```powershell
 git pull --ff-only
@@ -306,8 +322,52 @@ The tests use temporary databases and storage, leaving your accounts and files
 alone. They cover authentication, sessions, CSRF, ownership, type/size/path
 validation, rate limits, encrypted storage, byte-for-byte downloads, tampering,
 pagination, cross-account URL access, CSRF-protected deletion and recovery from
-simulated disk/database failures. Expected failure tests may print error log
-lines; the final unittest result indicates whether the checks passed.
+simulated disk/database failures. Checkpoint 3 adds explicit attack payloads,
+HTML parsing checks, inspection of a bound SQL parameter, safe error responses,
+log redaction and rotation. On Windows, two POSIX permission tests are expected
+to be skipped because Windows uses ACLs; a skip does not verify those ACLs.
+
+To run only the 16 Checkpoint 3 demonstrations:
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest tests.test_checkpoint3 -v
+```
+
+See the [test evidence and browser walkthrough](docs/checkpoint-3-security-tests.md).
+
+### Security logs and error handling
+
+`instance/logs/security.jsonl` contains one JSON event per line. Events cover
+registration, login success/failure, logout, session expiry, rejected CSRF,
+file authorization failures, upload validation, file operations and errors.
+Non-static responses also record a `request_completed` event. This means the
+response was prepared, not that a browser received or opened the whole download.
+
+Entries include a UTC timestamp, severity, event name, server-generated request
+ID, endpoint name, HTTP method, and internal user/file IDs where relevant.
+The same request ID is returned in `X-Request-ID`. The log deliberately excludes
+passwords, tokens, cookies, usernames, filenames, file contents, raw URLs/query
+strings and raw exception messages. It is separate from the development server's
+ordinary console output.
+
+The log rotates at about 1 MiB and retains three backups. Its directory is
+private and outside web routes and Git. On POSIX, files are `0600`; new Windows
+directories use the same Python 3.13+ ACL mechanism as private file storage.
+Existing Windows directory ACLs are not repaired automatically. Local logs are
+not tamper-proof against someone who controls the server.
+
+Read recent events in a second PowerShell window:
+
+```powershell
+Get-Content .\instance\logs\security.jsonl -Tail 10
+```
+
+Unexpected application errors use a generic 500 page. The security log records
+the exception class and request ID without its message, SQL parameters or
+traceback. HTTP error handling preserves status codes and protocol headers,
+including `Allow` on a 405. Logging write/rotation failures produce a minimal
+warning and do not undo a successful application action. Failure to initialise
+the private log at startup stops startup rather than silently disabling it.
 
 ### Troubleshooting
 
