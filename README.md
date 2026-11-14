@@ -4,9 +4,10 @@ ICS0027 Web Application Security - Project 1.
 
 Checkpoint 3 development branch: the core application is implemented, with
 private JSON security logs, safe error responses and documented attack tests.
-The current automated result is **74 passing tests on Linux**. Verification of
-this branch on Windows is pending; the earlier Checkpoint 2 Windows results
-remain recorded separately.
+Automated results are **74 passing tests on Linux** and **72 passing tests with
+two expected skips on Windows**, reported by the student on 14 November 2026.
+The Checkpoint 3 browser demonstrations are still pending; earlier Checkpoint 2
+Windows results remain recorded separately.
 
 The submitted Checkpoint 2 version remains on `main` at commit `ed158e3`.
 Checkpoint 3 work is on `checkpoint-3`; it has not been merged into `main`.
@@ -15,6 +16,7 @@ Checkpoint 3 work is on `checkpoint-3`; it has not been merged into `main`.
 - [Security test cases, payloads and results](docs/checkpoint-3-security-tests.md)
 - [Draft report](docs/checkpoint-3-report-draft.md)
 - [Captured automated test output](docs/evidence/checkpoint-3-tests.txt)
+- [Student-provided Windows test result](docs/evidence/checkpoint-3-windows-tests.txt)
 
 Read the [short design document](docs/architecture.md).
 The design document describes the planned system; the

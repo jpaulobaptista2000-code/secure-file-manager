@@ -1,8 +1,12 @@
 # Checkpoint 3: security tests and evidence
 
-**Date:** 11 November 2026  
+**Updated:** 14 November 2026\
 **Tested implementation:** `4ef254099c14f778555181ce17b16885d387fd2c`  
 **Result:** 74 tests passed on Linux / Python 3.12.14; 0 failures, 0 errors, 0 skips.
+
+**Windows result (student-provided, 14 November):** 74 tests in 17.378 seconds;
+72 passed, 2 skipped, no failures or errors. See the
+[PowerShell summary](evidence/checkpoint-3-windows-tests.txt).
 
 The [captured test output](evidence/checkpoint-3-tests.txt) contains the test names,
 environment, execution time and result. Tests use the real Flask application with
@@ -57,9 +61,10 @@ From the project folder on branch `checkpoint-3`:
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The first command runs 16 focused cases; the second runs all 74. On Windows,
-the full suite is expected to skip two POSIX mode-bit checks because Windows
-uses ACLs. The actual Windows result has not yet been recorded for this branch.
+The first command runs 16 focused cases; the second runs all 74. On 14 November,
+the student reported `OK (skipped=2)` for the full suite on Windows. The two skips
+match the suite's POSIX permission checks; Windows uses ACLs, which these checks
+do not verify.
 Tests use disposable data and do not delete the normal application's accounts or
 uploads. A known Flask-Session `datetime.utcnow` deprecation warning may appear;
 the captured Linux report omits that warning for readability.
@@ -112,4 +117,4 @@ that the application has no vulnerabilities. Browser CSP execution, Windows ACLs
 multi-user load, malicious PDF analysis, dependency vulnerability scanning, public
 deployment and remote/tamper-resistant logging are not established by this run.
 The existing Checkpoint 2 browser and fresh-clone checks remain historical evidence,
-not substitutes for verifying the new branch on Windows.
+not substitutes for the new branch's pending browser demonstrations.

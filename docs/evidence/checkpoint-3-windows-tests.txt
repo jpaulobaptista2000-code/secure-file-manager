@@ -1,0 +1,22 @@
+Checkpoint 3 Windows automated test result
+Reported by the student: 14 November 2026
+Branch: checkpoint-3, after fetching origin and switching to origin/checkpoint-3
+Command: .\.venv\Scripts\python.exe -m unittest discover -s tests -v
+
+The student supplied the following PowerShell summary:
+
+----------------------------------------------------------------------
+Ran 74 tests in 17.378s
+
+OK (skipped=2)
+
+Interpretation: 72 passed, 2 skipped, no failures or errors.
+This suite marks two POSIX permission checks to skip on Windows:
+- test_private_storage_permissions
+- test_security_log_has_private_posix_permissions
+These skips do not verify the Windows ACLs.
+
+Evidence provenance: pasted console summary from the student's Windows PC,
+not an independently executed Windows run or a full verbose test transcript.
+Browser demonstrations and a network TLS handshake are not established by this
+automated test result.

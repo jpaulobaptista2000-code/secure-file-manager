@@ -1,7 +1,7 @@
 # Checkpoint 3: progress note
 
 **Secure Web-Based File Encryption and Management System**  
-**Date:** 11 November 2026  
+**Updated:** 14 November 2026\
 **Branch:** `checkpoint-3`  
 **Implementation tested:** `4ef254099c14f778555181ce17b16885d387fd2c`
 
@@ -39,10 +39,17 @@ failures, errors or skips. They used temporary databases, files and logs. Flask'
 test client exercised request handling with an HTTPS base URL; this run did not
 exercise a browser or a network TLS handshake.
 
+On 14 November 2026, the student ran the complete suite on Windows from branch
+`checkpoint-3` and supplied its PowerShell summary: **74 tests in 17.378 seconds,
+OK (skipped=2)**. This means 72 passed and two were skipped, with no failures or
+errors. The suite defines two Windows skips for POSIX permission checks; skipped
+checks do not verify Windows ACLs. The [provided result](evidence/checkpoint-3-windows-tests.txt)
+is recorded separately from the Linux run.
+
 The following are still pending:
 
-1. Run the updated suite and browser demonstrations on the student's Windows PC.
-   Two POSIX permission checks are expected to skip there; this is not an ACL audit.
+1. Complete the browser demonstrations on the student's Windows PC: CSRF
+   rejection, cross-account access denial and inspection of the security log.
 2. Check the report against any additional length/format requirements in
    Section 1.3 of the original `Project.pdf`. That file is not present in the
    current workspace. The draft follows the four sections named in the supplied

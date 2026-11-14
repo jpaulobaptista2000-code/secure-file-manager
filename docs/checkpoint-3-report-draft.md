@@ -2,15 +2,15 @@
 
 **Checkpoint 3 — draft report**  
 **Web Application Security**  
-**Date:** 11 November 2026  
+**Updated:** 14 November 2026\
 **Repository:** https://github.com/jpaulobaptista2000-code/secure-file-manager  
 **Development branch:** `checkpoint-3`  
 **Tested implementation:** `4ef254099c14f778555181ce17b16885d387fd2c`
 
 Draft status: this document follows the four report sections named in the
 Checkpoint 3 brief. Additional requirements in Section 1.3 of the original
-`Project.pdf` still need to be checked. Windows verification of this checkpoint
-and the student's browser demonstration evidence are also pending.
+`Project.pdf` still need to be checked. Windows automated tests have passed;
+the student's browser demonstration evidence is still pending.
 
 ## 1. Introduction
 
@@ -175,9 +175,14 @@ results include:
 
 The accompanying [security test matrix](checkpoint-3-security-tests.md) provides
 the exact sample vectors, mitigations and test names. The [captured output](evidence/checkpoint-3-tests.txt)
-records the execution result. New Windows and browser results will be added after
-the student repeats the checks on the updated branch; previous Checkpoint 2
-results are not counted as current verification.
+records the Linux execution result. On 14 November 2026, the student also ran
+the complete suite on Windows from branch `checkpoint-3` and supplied the
+[PowerShell result](evidence/checkpoint-3-windows-tests.txt): 74 tests in 17.378
+seconds, `OK (skipped=2)`. This establishes 72 passes and two skips, without
+failures or errors, based on the supplied summary. The skipped checks are the
+suite's POSIX permission checks and do not verify Windows ACLs. Current browser
+demonstrations remain pending; previous Checkpoint 2 results are not counted as
+new Checkpoint 3 browser evidence.
 
 ### Limitations and remaining work
 
@@ -205,10 +210,11 @@ The implemented system supports the planned local account and file-management
 flows, with server-side encryption, secure sessions and per-user authorization.
 Checkpoint 3 adds structured security logging, consistent error handling and
 explicit attack demonstrations while preserving the submitted Checkpoint 2
-version. All 74 automated tests pass in the recorded Linux environment.
+version. All 74 automated tests pass in the recorded Linux environment, and the
+student's Windows run reports 72 passes with two expected skips.
 
-The next work is to validate this branch on the student's Windows setup, capture
-the CSRF and cross-account browser demonstrations, and check the draft against
+The next work is to capture the CSRF and cross-account browser demonstrations
+on Windows, inspect the security events, and check the draft against
 the original report-format requirements before preparing the Moodle submission.
 
 ## References
