@@ -8,6 +8,11 @@
 72 passed, 2 skipped, no failures or errors. See the
 [PowerShell summary](evidence/checkpoint-3-windows-tests.txt).
 
+**Windows browser checks (14 November):** the student confirmed CSRF rejection,
+preservation of the test file and cross-account download denial. Inspection of
+the private security log confirmed the corresponding 400 and 404 statuses. See
+the [browser and security-event summary](evidence/checkpoint-3-windows-browser.md).
+
 The [captured test output](evidence/checkpoint-3-tests.txt) contains the test names,
 environment, execution time and result. Tests use the real Flask application with
 temporary SQLite, storage, keys and logs. Requests go through Flask's test client
@@ -69,10 +74,17 @@ Tests use disposable data and do not delete the normal application's accounts or
 uploads. A known Flask-Session `datetime.utcnow` deprecation warning may appear;
 the captured Linux report omits that warning for readability.
 
-## Browser demonstration to complete on Windows
+## Windows browser demonstrations and reproduction steps
 
-These are instructions with expected outcomes, **not a claim of a completed
-Checkpoint 3 browser test**. Use disposable accounts and a small test document.
+On 14 November 2026, the student completed the following practical checks with
+`teste-csrf.txt`. The error-page outcomes and continued download after the CSRF
+attempt were confirmed in conversation; the two rejection statuses are also
+supported by inspection of the private security log. These manual checks cover a
+forged-token deletion and a second account's download attempt. The broader
+automated suite separately covers other forms, confirmation and deletion access.
+
+The steps below allow the demonstrations to be repeated. Use disposable accounts
+and a small test document.
 Start `run.py` and use the same host, such as `https://127.0.0.1:5000`, throughout.
 
 ### 1. Demonstrate CSRF rejection
@@ -102,13 +114,15 @@ Start `run.py` and use the same host, such as `https://127.0.0.1:5000`, througho
 In another PowerShell window, from the project directory:
 
 ```powershell
-Get-Content .\instance\logs\security.jsonl -Tail 10
+Get-Content .\instance\logs\security.jsonl -Tail 100 | Select-String 'csrf_rejected|file_access_denied'
 ```
 
 Look for `csrf_rejected` and `file_access_denied`. The Network panel's response
 header `X-Request-ID` can be matched to `request_id` in the JSON line. Record only
 disposable demonstration data. The runtime log itself stays outside the repository;
 it is not a public download and is not included in a submission by default.
+The evidence note contains a summary of the observed results, without copying
+runtime timestamps, account IDs, request IDs or file identifiers into the repository.
 
 ## Scope limits
 
@@ -117,4 +131,4 @@ that the application has no vulnerabilities. Browser CSP execution, Windows ACLs
 multi-user load, malicious PDF analysis, dependency vulnerability scanning, public
 deployment and remote/tamper-resistant logging are not established by this run.
 The existing Checkpoint 2 browser and fresh-clone checks remain historical evidence,
-not substitutes for the new branch's pending browser demonstrations.
+separate from the Checkpoint 3 demonstrations recorded above.

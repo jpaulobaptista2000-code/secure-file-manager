@@ -46,15 +46,22 @@ errors. The suite defines two Windows skips for POSIX permission checks; skipped
 checks do not verify Windows ACLs. The [provided result](evidence/checkpoint-3-windows-tests.txt)
 is recorded separately from the Linux run.
 
+The student also completed all three planned practical checks on Windows:
+the forged deletion token was rejected, the file remained present and downloaded
+with its original contents, and a second account received **File not found**
+when opening the owner's download link. Inspection of the private log confirmed
+`csrf_rejected` / **400** for the deletion POST and `file_access_denied` / **404**
+for the second account's download GET. See the
+[browser and security-event summary](evidence/checkpoint-3-windows-browser.md).
+The original runtime entries and their private identifiers are not published.
+
 The following are still pending:
 
-1. Complete the browser demonstrations on the student's Windows PC: CSRF
-   rejection, cross-account access denial and inspection of the security log.
-2. Check the report against any additional length/format requirements in
+1. Check the report against any additional length/format requirements in
    Section 1.3 of the original `Project.pdf`. That file is not present in the
    current workspace. The draft follows the four sections named in the supplied
    Checkpoint 3 brief.
-3. Review the draft, add the student's own demonstration evidence, and prepare
+2. Review the draft and prepare
    the final Moodle upload. Nothing has been submitted to Moodle by this update.
 
 Earlier Windows/HTTPS results belong to Checkpoint 2 and are not presented as

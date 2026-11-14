@@ -9,8 +9,8 @@
 
 Draft status: this document follows the four report sections named in the
 Checkpoint 3 brief. Additional requirements in Section 1.3 of the original
-`Project.pdf` still need to be checked. Windows automated tests have passed;
-the student's browser demonstration evidence is still pending.
+`Project.pdf` still need to be checked. Windows automated tests and the planned
+CSRF, cross-account download and security-log demonstrations are recorded below.
 
 ## 1. Introduction
 
@@ -180,9 +180,21 @@ the complete suite on Windows from branch `checkpoint-3` and supplied the
 [PowerShell result](evidence/checkpoint-3-windows-tests.txt): 74 tests in 17.378
 seconds, `OK (skipped=2)`. This establishes 72 passes and two skips, without
 failures or errors, based on the supplied summary. The skipped checks are the
-suite's POSIX permission checks and do not verify Windows ACLs. Current browser
-demonstrations remain pending; previous Checkpoint 2 results are not counted as
-new Checkpoint 3 browser evidence.
+suite's POSIX permission checks and do not verify Windows ACLs.
+
+The student then completed the browser demonstrations using `teste-csrf.txt`.
+Changing the deletion form's CSRF token to `forged` produced the security-token
+error page. The student confirmed that the file remained listed and could still
+be downloaded with its original contents. In a separate private browser window,
+a second account opened the owner's download link and received **File not found**.
+
+Inspection of the private security log confirmed the corresponding
+`csrf_rejected` event with status **400** for the deletion POST, and
+`file_access_denied` with status **404** for the second account's download GET.
+The [browser evidence note](evidence/checkpoint-3-windows-browser.md) summarizes
+the observations without publishing the original runtime entries, their exact
+timestamps or their account, request and file identifiers. These are current
+Checkpoint 3 results; historical Checkpoint 2 browser results are recorded separately.
 
 ### Limitations and remaining work
 
@@ -211,11 +223,12 @@ flows, with server-side encryption, secure sessions and per-user authorization.
 Checkpoint 3 adds structured security logging, consistent error handling and
 explicit attack demonstrations while preserving the submitted Checkpoint 2
 version. All 74 automated tests pass in the recorded Linux environment, and the
-student's Windows run reports 72 passes with two expected skips.
+student's Windows run reports 72 passes with two expected skips. Manual browser
+checks and inspection of the private log also demonstrate rejection of an invalid CSRF
+token and of another account's direct download attempt.
 
-The next work is to capture the CSRF and cross-account browser demonstrations
-on Windows, inspect the security events, and check the draft against
-the original report-format requirements before preparing the Moodle submission.
+The remaining work is to check this draft against the original report-format
+requirements and prepare the Moodle submission.
 
 ## References
 

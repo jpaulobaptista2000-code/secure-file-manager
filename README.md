@@ -6,7 +6,8 @@ Checkpoint 3 development branch: the core application is implemented, with
 private JSON security logs, safe error responses and documented attack tests.
 Automated results are **74 passing tests on Linux** and **72 passing tests with
 two expected skips on Windows**, reported by the student on 14 November 2026.
-The Checkpoint 3 browser demonstrations are still pending; earlier Checkpoint 2
+The student also completed browser checks for CSRF rejection and cross-account
+download denial, and confirmed the corresponding security events. Earlier Checkpoint 2
 Windows results remain recorded separately.
 
 The submitted Checkpoint 2 version remains on `main` at commit `ed158e3`.
@@ -17,6 +18,7 @@ Checkpoint 3 work is on `checkpoint-3`; it has not been merged into `main`.
 - [Draft report](docs/checkpoint-3-report-draft.md)
 - [Captured automated test output](docs/evidence/checkpoint-3-tests.txt)
 - [Student-provided Windows test result](docs/evidence/checkpoint-3-windows-tests.txt)
+- [Windows browser checks and security-event summary](docs/evidence/checkpoint-3-windows-browser.md)
 
 Read the [short design document](docs/architecture.md).
 The design document describes the planned system; the
