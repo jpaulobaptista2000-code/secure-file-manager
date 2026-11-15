@@ -41,9 +41,7 @@ Interrupted deletions can be retried by the owner.
   This used the same Windows PC with Python, Git and mkcert already installed.
 
 The browser checks were reported by the student; document contents were checked
-visually. Automated tests also verify downloads byte for byte. Full evidence
-and the earlier development steps are in the
-[development and verification log](checkpoint-2-development-log.md).
+visually. Automated tests also verify downloads byte for byte.
 
 ## Current limits
 
@@ -59,5 +57,4 @@ providing secure erasure of backups or previously downloaded copies.
 
 Follow the [README setup instructions](../README.md#running-locally). The
 [commit history](https://github.com/jpaulobaptista2000-code/secure-file-manager/commits/main)
-shows the implementation increments. The
-[submission file](checkpoint-2-submission.txt) contains direct links for Moodle.
+shows the implementation increments.
