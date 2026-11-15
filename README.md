@@ -4,8 +4,10 @@ ICS0027 Web Application Security - Project 1.
 
 Checkpoint 3 development branch: the core application is implemented, with
 private JSON security logs, safe error responses and documented attack tests.
-Automated results are **74 passing tests on Linux** and **72 passing tests with
-two expected skips on Windows**, reported by the student on 14 November 2026.
+The latest automated result is **75 passing tests on Linux**, including the
+source-address logging check. The student-reported Windows run on 14 November
+2026, before that addition, had **72 passes and two expected skips out of 74**.
+The added check has not yet been confirmed on Windows.
 The student also completed browser checks for CSRF rejection and cross-account
 download denial, and confirmed the corresponding security events. Earlier Checkpoint 2
 Windows results remain recorded separately.
@@ -16,7 +18,8 @@ Checkpoint 3 work is on `checkpoint-3`; it has not been merged into `main`.
 - [Checkpoint 3 progress and remaining checks](docs/checkpoint-3-progress.md)
 - [Security test cases, payloads and results](docs/checkpoint-3-security-tests.md)
 - [Draft report](docs/checkpoint-3-report-draft.md)
-- [Captured automated test output](docs/evidence/checkpoint-3-tests.txt)
+- [Latest captured automated test output](docs/evidence/checkpoint-3-final-tests.txt)
+- [Earlier 74-test Linux output](docs/evidence/checkpoint-3-tests.txt)
 - [Student-provided Windows test result](docs/evidence/checkpoint-3-windows-tests.txt)
 - [Windows browser checks and security-event summary](docs/evidence/checkpoint-3-windows-browser.md)
 
@@ -331,7 +334,7 @@ HTML parsing checks, inspection of a bound SQL parameter, safe error responses,
 log redaction and rotation. On Windows, two POSIX permission tests are expected
 to be skipped because Windows uses ACLs; a skip does not verify those ACLs.
 
-To run only the 16 Checkpoint 3 demonstrations:
+To run only the 17 Checkpoint 3 demonstrations:
 
 ```powershell
 .\.venv\Scripts\python.exe -m unittest tests.test_checkpoint3 -v
@@ -348,7 +351,11 @@ Non-static responses also record a `request_completed` event. This means the
 response was prepared, not that a browser received or opened the whole download.
 
 Entries include a UTC timestamp, severity, event name, server-generated request
-ID, endpoint name, HTTP method, and internal user/file IDs where relevant.
+ID, endpoint name, HTTP method, connection source address, and internal user/file
+IDs where relevant. Outcome/status fields are included where applicable.
+The source address is validated as an IP address, or recorded as null if missing
+or invalid. There is no trusted proxy in this setup, so client-supplied
+`Forwarded` and `X-Forwarded-For` headers are not used to determine it.
 The same request ID is returned in `X-Request-ID`. The log deliberately excludes
 passwords, tokens, cookies, usernames, filenames, file contents, raw URLs/query
 strings and raw exception messages. It is separate from the development server's

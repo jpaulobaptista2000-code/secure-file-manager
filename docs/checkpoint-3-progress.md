@@ -1,70 +1,64 @@
 # Checkpoint 3: progress note
 
-**Secure Web-Based File Encryption and Management System**  
-**Updated:** 14 November 2026\
-**Branch:** `checkpoint-3`  
-**Implementation tested:** `4ef254099c14f778555181ce17b16885d387fd2c`
+**Secure Web-Based File Encryption and Management System**\
+**Updated:** 15 November 2026\
+**Branch:** `checkpoint-3`\
+**Latest tested implementation:** `079a7656fcc5923eddfe5ff4224e192c98d25048`
 
 The core application is implemented. This checkpoint builds on the submitted
-Checkpoint 2 version (`ed158e3`) without changing that version on `main`.
+Checkpoint 2 version (`ed158e3`) retained on `main`.
 
 ## Requirements and evidence
 
 | Requirement | Implementation and verification |
 | --- | --- |
-| CSRF on every state-changing form | Flask-WTF checks registration, login, logout, upload and deletion. Missing, forged and another session's tokens return 400. A deletion request with a valid token but a foreign HTTPS Referer also returns 400, leaving the file available. |
-| XSS defences | Jinja escapes displayed input; CSP disables scripts; uploads are downloaded as attachments. Tests parse reflected/stored payload responses and find no injected HTML elements. |
-| Input validation and secure file handling | Server-side username/password checks, PDF/TXT allowlist, UTF-8/PDF format checks, 5 MiB limit, path rejection and generated storage IDs. Existing encryption, tamper-detection and failure-recovery tests still pass. |
-| SQL injection prevention | Application queries use SQLAlchemy bound parameters. Malicious login inputs fail; a test captures the real login SQL and confirms the username is passed separately from the SQL text. Source review found no interpolated raw application SQL. |
-| Per-user access control | Ownership comes from the server session. Bob cannot list, download, confirm deletion or delete Alice's files; direct file operations return 404. |
-| Secure errors and structured logging | Added private rotating JSON logs, server-generated request IDs, fixed event codes, generic HTTP/500 responses and redaction of raw exception messages. Tests cover disclosure, log injection attempts and logging failures. |
-| Security cases and results | [Test matrix and demonstrations](checkpoint-3-security-tests.md), with [captured output](evidence/checkpoint-3-tests.txt). |
-| Draft report | [Introduction, Implementation, Security Analysis and Conclusion](checkpoint-3-report-draft.md). |
+| CSRF on every state-changing form | Registration, login, logout, upload and deletion reject missing, forged and foreign-session tokens. A foreign HTTPS Referer is rejected even with a valid token. The Windows browser demonstration confirmed rejection without deleting the file. |
+| XSS defences | Jinja escapes displayed input; CSP disables scripts; uploads are downloaded as attachments. Tests parse reflected/stored payload responses and find no injected elements. |
+| Input validation and secure file handling | Server validation, PDF/TXT allowlist, basic format checks, 5 MiB limit, path rejection and generated storage IDs. Encryption, tamper detection and failure recovery remain tested. |
+| SQL injection prevention | SQLAlchemy bound parameters throughout. Malicious login inputs fail; inspection of the real login query verifies separate parameters. No interpolated raw application SQL was found during source review. |
+| Per-user access control | Ownership is determined from the server session. Other users cannot list, download or delete a file. Automated tests and the Windows browser download attempt confirmed denial. |
+| Secure errors and logging | Generic errors; private rotating JSON events with timestamp, event, account ID when known, validated source address and outcome/status where relevant. Logs exclude secrets and raw error messages. |
+| Security cases and results | [Case matrix](checkpoint-3-security-tests.md), [latest Linux output](evidence/checkpoint-3-final-tests.txt), [Windows summary](evidence/checkpoint-3-windows-tests.txt), and [browser evidence](evidence/checkpoint-3-windows-browser.md). |
+| Draft report | [Introduction, Implementation, Security Analysis and Conclusion](checkpoint-3-report-draft.md), with standalone setup instructions and references. |
 
-## Changes in this checkpoint
+## Changes and requirement review
 
-The new `audit.py` module uses Python's standard logging library, so no additional
-packages are needed. Logs are stored under `instance/logs/`, outside Git and web
-routes. Existing accounts and encrypted files keep their format and database
-schema. The application records operational failures without exposing their
-original text to the user or the security log.
+The new `audit.py` module uses Python's standard logging library. Logs remain
+under the private `instance/logs/` directory, outside Git and web routes. Account,
+file and key formats are unchanged. Error handling avoids disclosing raw exception
+messages and SQL parameters.
 
-Sixteen tests were added to make the checkpoint's attack demonstrations explicit
-and check logging/error handling. The complete suite now contains 74 tests.
+The supplied Project.pdf has now been checked: Section 1.3 (p. 5) specifies the
+four report sections, and Section 3.4.3 (pp. 11–12) lists Checkpoint 3 evidence.
+Section 3.2 (p. 10) also requires a source address in structured logs. The field
+was added using the validated connection IP, without trusting client-supplied
+forwarding headers. A focused test covers IPv4, IPv6, missing/invalid addresses
+and forged headers. The suite now contains 75 tests, including 17 Checkpoint 3 cases.
 
-## Results and remaining checks
+## Recorded verification
 
-On 11 November 2026, **74 tests passed on Linux with Python 3.12.14**, with no
-failures, errors or skips. They used temporary databases, files and logs. Flask's
-test client exercised request handling with an HTTPS base URL; this run did not
-exercise a browser or a network TLS handshake.
+- **Linux, 14 November:** 75 tests passed in 16.536 seconds, with no failures,
+  errors or skips, on Python 3.12.14. This includes the source-address addition.
+  Tests use disposable data and Flask's test client, not a real browser or TLS
+  network handshake. The earlier 74-test run is retained separately.
+- **Windows, 14 November, student-provided summary:** 74 tests in 17.378 seconds,
+  `OK (skipped=2)`: 72 passes and two POSIX permission checks skipped. This run
+  preceded the source-address addition and does not verify Windows ACLs.
+- **Windows browser, 14 November:** a forged deletion token was rejected, the
+  test file remained downloadable with its original contents, and another
+  account received File not found from the owner's download link. Private-log
+  inspection confirmed `csrf_rejected` / 400 and `file_access_denied` / 404.
+  Original runtime entries and private identifiers are not published.
 
-On 14 November 2026, the student ran the complete suite on Windows from branch
-`checkpoint-3` and supplied its PowerShell summary: **74 tests in 17.378 seconds,
-OK (skipped=2)**. This means 72 passed and two were skipped, with no failures or
-errors. The suite defines two Windows skips for POSIX permission checks; skipped
-checks do not verify Windows ACLs. The [provided result](evidence/checkpoint-3-windows-tests.txt)
-is recorded separately from the Linux run.
+## Remaining work
 
-The student also completed all three planned practical checks on Windows:
-the forged deletion token was rejected, the file remained present and downloaded
-with its original contents, and a second account received **File not found**
-when opening the owner's download link. Inspection of the private log confirmed
-`csrf_rejected` / **400** for the deletion POST and `file_access_denied` / **404**
-for the second account's download GET. See the
-[browser and security-event summary](evidence/checkpoint-3-windows-browser.md).
-The original runtime entries and their private identifiers are not published.
+1. After pulling the branch on Windows, run the one added source-address test
+   shown in the security-test document. Its Linux result is already recorded.
+2. Review and upload the checkpoint report to Moodle, and bring the running
+   application and commit history for the lab demonstration. Nothing has been
+   submitted to Moodle by this repository update.
 
-The following are still pending:
-
-1. Check the report against any additional length/format requirements in
-   Section 1.3 of the original `Project.pdf`. That file is not present in the
-   current workspace. The draft follows the four sections named in the supplied
-   Checkpoint 3 brief.
-2. Review the draft and prepare
-   the final Moodle upload. Nothing has been submitted to Moodle by this update.
-
-Earlier Windows/HTTPS results belong to Checkpoint 2 and are not presented as
-new Checkpoint 3 results. Public hosting, antivirus scanning, account-wide storage
-quotas, external key management and tamper-resistant remote logging remain outside
-the implemented local demonstration scope.
+The report states the local-development limitations, including server-side key
+access, basic PDF validation, bounded local logs and the absence of storage
+quotas, production hosting and dependency vulnerability scanning. The final
+project submission remains separate from this checkpoint.

@@ -1,19 +1,23 @@
 # Checkpoint 3: security tests and evidence
 
-**Updated:** 14 November 2026\
-**Tested implementation:** `4ef254099c14f778555181ce17b16885d387fd2c`  
-**Result:** 74 tests passed on Linux / Python 3.12.14; 0 failures, 0 errors, 0 skips.
+**Updated:** 15 November 2026\
+**Latest tested implementation:** `079a7656fcc5923eddfe5ff4224e192c98d25048`\
+**Latest result (14 November):** 75 tests passed in 16.536 seconds on Linux /
+Python 3.12.14; 0 failures, 0 errors, 0 skips.
 
 **Windows result (student-provided, 14 November):** 74 tests in 17.378 seconds;
 72 passed, 2 skipped, no failures or errors. See the
 [PowerShell summary](evidence/checkpoint-3-windows-tests.txt).
+This Windows run and the browser checks below used implementation `4ef2540`,
+before the source-address logging addition. The extra test has passed on Linux;
+its Windows execution is still pending.
 
 **Windows browser checks (14 November):** the student confirmed CSRF rejection,
 preservation of the test file and cross-account download denial. Inspection of
 the private security log confirmed the corresponding 400 and 404 statuses. See
 the [browser and security-event summary](evidence/checkpoint-3-windows-browser.md).
 
-The [captured test output](evidence/checkpoint-3-tests.txt) contains the test names,
+The [latest captured test output](evidence/checkpoint-3-final-tests.txt) contains the test names,
 environment, execution time and result. Tests use the real Flask application with
 temporary SQLite, storage, keys and logs. Requests go through Flask's test client
 with an HTTPS base URL. These are application-level tests, not browser execution,
@@ -42,6 +46,7 @@ test, rather than proof that every possible variant of an attack is covered.
 | C3-13 / logging failure and growth | Simulated a write/rotation failure containing sensitive error text. Login still returned **303**; stderr contained only a fixed warning. Separate rotation tests retained one current file and three backups. | Safe logging error handler and bounded rotation; logging-failure and rotation tests in `test_checkpoint3.py`. |
 | C3-14 / session and request tampering | Replayed a logged-out or pre-login cookie, changed session timestamps, forged a cookie and exceeded login/file limits. Authentication stayed denied after expiry/revocation; excessive requests returned **429**. | Server sessions, ID rotation, idle/absolute expiry and rate limits; `test_auth.py` and `test_file_actions.py`. |
 | C3-15 / storage failure recovery | Simulated partial writes, database failures and interrupted deletion. New failed uploads were cleaned up; interrupted deletion stayed unavailable and could be retried. | Rollback, exclusive file creation and durable deletion markers; failure tests in `test_uploads.py` and `test_file_actions.py`. |
+| C3-16 / source-address spoofing | Supplied forged `Forwarded` and `X-Forwarded-For` headers while using IPv4, IPv6, missing and invalid connection addresses. Logs contained the validated connection address or null, never the forged header value. | Uses `request.remote_addr` with IP validation, not untrusted proxy headers; `test_source_address_uses_connection_not_forwarded_headers`. Required logging field in Project.pdf, Section 3.2, p. 10. |
 
 ## SQL and rendering source review
 
@@ -66,10 +71,18 @@ From the project folder on branch `checkpoint-3`:
 .\.venv\Scripts\python.exe -m unittest discover -s tests -v
 ```
 
-The first command runs 16 focused cases; the second runs all 74. On 14 November,
+The first command runs 17 focused cases; the second runs all 75. On 14 November,
 the student reported `OK (skipped=2)` for the full suite on Windows. The two skips
 match the suite's POSIX permission checks; Windows uses ACLs, which these checks
 do not verify.
+That recorded Windows result covered 74 tests, before the source-address test
+was added. To check only the addition after updating the branch:
+
+```powershell
+git pull --ff-only
+.\.venv\Scripts\python.exe -m unittest tests.test_checkpoint3.Checkpoint3Tests.test_source_address_uses_connection_not_forwarded_headers -v
+```
+
 Tests use disposable data and do not delete the normal application's accounts or
 uploads. A known Flask-Session `datetime.utcnow` deprecation warning may appear;
 the captured Linux report omits that warning for readability.
