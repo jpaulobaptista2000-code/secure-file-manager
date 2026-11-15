@@ -240,6 +240,23 @@ class Checkpoint3Tests(WebTestCase):
         self.assertRegex(response.headers["X-Request-ID"], r"^[0-9a-f]{32}$")
         self.assertNotIn("attacker-value", self.log_text())
 
+    def test_source_address_uses_connection_not_forwarded_headers(self):
+        """Logs: record the connection IP and reject spoofed forwarding-header values."""
+        for address in ("127.0.0.1", "2001:db8::7", None, "invalid-address"):
+            with self.subTest(address=address):
+                response = self.client.get(
+                    "/login", base_url=BASE_URL,
+                    environ_overrides={"REMOTE_ADDR": address},
+                    headers={"X-Forwarded-For": "203.0.113.50", "Forwarded": "for=203.0.113.50"},
+                )
+                self.assertEqual(response.status_code, 200)
+                request_id = response.headers["X-Request-ID"]
+                entry, = [e for e in self.events() if e.get("request_id") == request_id]
+                expected = address if address in ("127.0.0.1", "2001:db8::7") else None
+                self.assertEqual(entry["source_address"], expected)
+        self.assertNotIn("203.0.113.50", self.log_text())
+        self.assertNotIn("invalid-address", self.log_text())
+
     def test_log_write_failure_does_not_break_login_or_print_sensitive_details(self):
         """Logs: simulated full-disk failure keeps login working and emits a safe warning."""
         self.register()

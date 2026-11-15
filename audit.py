@@ -1,6 +1,7 @@
 """Small, private JSON security log; never serialize raw requests or exceptions."""
 
 from datetime import datetime, timezone
+from ipaddress import ip_address
 import json
 import logging
 from logging.handlers import RotatingFileHandler
@@ -19,11 +20,18 @@ class SecurityFormatter(logging.Formatter):
             "event": getattr(record, "security_event", "application_error"),
         }
         if has_request_context():
+            try:
+                source_address = str(ip_address(request.remote_addr or ""))
+            except ValueError:
+                source_address = None
             entry.update(
                 request_id=getattr(g, "request_id", None),
                 endpoint=request.endpoint or "unmatched",
                 method=request.method,
                 user_id=getattr(g, "audit_user_id", None),
+                # No proxy is configured: use the connection address, not an
+                # untrusted X-Forwarded-For/Forwarded header supplied by a client.
+                source_address=source_address,
             )
         # Only these application-controlled fields may be recorded. In particular,
         # getMessage()/formatException() can expose SQL parameters and credentials.
