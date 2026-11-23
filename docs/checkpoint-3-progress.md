@@ -1,5 +1,7 @@
 # Checkpoint 3 progress
 
+Checkpoint record, November 2026. The [final test results](../tests/RESULTS.md) include the subsequent Windows source-address check.
+
 The core application is implemented. This checkpoint adds private security
 logging, generic error handling and tests for the main web attacks.
 
@@ -18,8 +20,8 @@ checks also succeeded, with POSIX permission checks skipped. A forged deletion
 token was rejected without removing the file, and another account's download
 attempt returned **File not found**. Both rejections appeared in the private log.
 
-The latest source-address logging addition has passed in development and still
-needs confirmation on Windows. Test details and supporting evidence are kept in
+At this checkpoint, the source-address check had only been confirmed in development.
+It later passed in the full Windows run linked above. Test details and supporting evidence are kept in
 one place: [security tests](checkpoint-3-security-tests.md).
 
 For setup and current limitations, see the [README](../README.md).

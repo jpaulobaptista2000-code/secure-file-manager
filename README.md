@@ -1,138 +1,63 @@
 # Secure File Manager
 
-A student project for ICS0027 Web Application Security. Users can register, sign
-in, upload, download and delete their own PDF and TXT files. File contents are
-encrypted on the server.
+Final project for **ICS0027 Web Application Security**. Sign in, upload a PDF or text file, and download or delete it later. The server encrypts every file before saving it. Each account can see only its own files.
 
-Current work is on **`checkpoint-3`**. The earlier Checkpoint 2 version is retained
-on `main`, and Checkpoint 1 is on `checkpoint/01-foundation`.
-
-## Documentation
-
-- [Checkpoint 1: architecture and threat model](docs/architecture.md)
-- [Checkpoint 2: implemented features and verification](docs/checkpoint-2-progress.md)
-- [Checkpoint 3: current progress](docs/checkpoint-3-progress.md)
-- [Security tests, attack examples and evidence](docs/checkpoint-3-security-tests.md)
+[Final report](Final_Report.pdf) · [Test results](tests/RESULTS.md) · [GitHub repository](https://github.com/jpaulobaptista2000-code/secure-file-manager)
 
 ## Running locally
 
-Use **Windows PowerShell**, **Python 3.13 or newer**, **Git** and **mkcert**.
-If Python or Git is missing, install it from [python.org](https://www.python.org/downloads/windows/)
-or [git-scm.com](https://git-scm.com/download/win).
+These instructions are for Windows PowerShell, Python 3.13 and Chrome or Edge. The app uses SQLite, so you do not need to install a database server.
 
-### 1. Install mkcert
+1. **Open the project folder.** If you have the Moodle ZIP, choose **Extract All**, then open a terminal in the folder containing `run.py` and this README. If you prefer Git, clone the repository instead:
 
-```powershell
-winget install --id FiloSottile.mkcert --exact --source winget
-```
+   ```powershell
+   git clone https://github.com/jpaulobaptista2000-code/secure-file-manager.git
+   Set-Location secure-file-manager
+   ```
 
-Reopen PowerShell and check that `py -3 --version`, `git --version` and
-`mkcert -version` work.
+2. **Install the Python dependencies.** If needed, install [Python 3.13 for Windows](https://www.python.org/downloads/windows/) with the Python launcher first.
 
-### 2. Download the project and install dependencies
+   ```powershell
+   py -3.13 -m venv .venv
+   .\.venv\Scripts\python.exe -m pip install -r requirements.txt
+   ```
 
-```powershell
-Set-Location $env:USERPROFILE
-New-Item -ItemType Directory -Force Projects | Out-Null
-Set-Location Projects
-git clone --branch checkpoint-3 https://github.com/jpaulobaptista2000-code/secure-file-manager.git
-Set-Location secure-file-manager
-py -3 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-```
+### Create the HTTPS certificate
 
-These commands are for a new copy. For an existing installation, use the update
-instructions below. No virtual-environment activation is needed.
+3. **Install [mkcert](https://github.com/FiloSottile/mkcert)** if `mkcert -version` does not work. Reopen PowerShell in the project folder after installing it.
 
-### 3. Create the HTTPS certificate
+   ```powershell
+   winget install --id FiloSottile.mkcert --exact --source winget
+   ```
 
-```powershell
-mkcert -install
-New-Item -ItemType Directory -Force certs | Out-Null
-mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem localhost 127.0.0.1 ::1
-```
+4. **Create the local certificate** once per installation. Accept the Windows trust prompt for your local development certificate authority. If this project folder already has a working certificate, keep it.
 
-Approve the Windows certificate prompt. Generate certificates locally and keep
-private keys out of Git. See the [mkcert documentation](https://github.com/FiloSottile/mkcert)
-if installation fails.
+   ```powershell
+   mkcert -install
+   New-Item -ItemType Directory -Force certs | Out-Null
+   mkcert -cert-file certs/localhost.pem -key-file certs/localhost-key.pem localhost 127.0.0.1 ::1
+   ```
 
-### 4. Start the application
+### Start and use the app
 
-```powershell
-.\.venv\Scripts\python.exe run.py
-```
+5. **Start the server** and leave PowerShell open:
 
-Keep PowerShell open and visit **https://127.0.0.1:5000** in Chrome or Edge.
-Register with a username of 3–30 letters, numbers or underscores and a password
-of 15–128 characters. Sign in and upload a nonempty PDF or UTF-8 TXT file up to
-**5 MiB**. Use **My files** to download or delete it.
+   ```powershell
+   .\.venv\Scripts\python.exe run.py
+   ```
 
-Stop with **Ctrl+C**. To restart, run the same command from the project folder.
-The database is created automatically. Keep `instance/`: it contains the accounts,
-encrypted files, keys and private logs. Use the same hostname throughout a session.
+   Open **https://127.0.0.1:5000**. Use that same address throughout the session. Select **Create account** (username: 3–30 letters `a–z`, digits or underscores; password: 15–128 characters), then **Sign in**. In **My files**, choose a nonempty PDF or UTF-8 TXT up to 5 MiB and select **Upload and encrypt**. **Download** restores the original contents; **Delete** asks for confirmation.
 
-### Updating an existing installation
+Press **Ctrl+C** in PowerShell to stop. Next time, only step 5 is needed. Keep `instance/`: it holds your local accounts, file metadata, encrypted files and keys. The database is created on first launch. `certs/` and `instance/` are local and are not distributed.
 
-Stop the server and open PowerShell in the project folder. Check `git status`
-and preserve any local edits before updating.
+## Run the tests
+
+From the project folder, with the Python dependencies installed:
 
 ```powershell
-git fetch origin
-git switch checkpoint-3
-git pull --ff-only
-.\.venv\Scripts\python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\python.exe run.py
+.\.venv\Scripts\python.exe -m unittest discover -s tests
 ```
 
-If the local branch does not exist, use `git switch --track origin/checkpoint-3`.
-Keep the existing `.venv/`, `certs/` and `instance/` folders.
+Tests create their own temporary accounts and files. They do not use your normal `instance/` data or require a running server. The [test record](tests/RESULTS.md) explains the two expected Windows skips.
 
-## Security and tests
-
-- Argon2id password hashing and server-side sessions with secure cookies,
-  session-ID rotation, logout invalidation and expiry.
-- Ownership checks on every file operation, CSRF protection, escaped HTML and
-  parameterized database queries.
-- AES-256-GCM encryption, server-side upload validation, request limits and HTTPS.
-- Generic errors and private structured logs without passwords, cookies or tokens.
-
-Run the automated tests from the project folder:
-
-```powershell
-.\.venv\Scripts\python.exe -m unittest discover -s tests -v
-```
-
-Tests use temporary data. Windows skips POSIX permission checks; those skips do
-not verify Windows ACLs. See the [security test record](docs/checkpoint-3-security-tests.md)
-for results, browser demonstrations and the remaining Windows logging check.
-
-This is a local development application. The server holds the encryption keys,
-PDF checks are not malware scanning, and deletion does not erase backups or
-previous downloads. Public hosting, account storage quotas and remote logging
-are outside the current scope.
-
-## Code overview
-
-| File or folder | Purpose |
-| --- | --- |
-| `run.py`, `app.py` | Start HTTPS and configure Flask. |
-| `auth.py`, `security.py` | Accounts, passwords and sessions. |
-| `models.py`, `extensions.py` | Database models and Flask extensions. |
-| `file_routes.py`, `upload_request.py` | File operations and upload validation. |
-| `encrypted_storage.py` | Encryption, private storage and deletion. |
-| `audit.py` | Private security logging. |
-| `templates/`, `static/` | Web pages and styling. |
-| `tests/` | Automated functionality and security checks. |
-| `requirements.txt` | Python dependencies. |
-
-## Common setup issues
-
-| Problem | Action |
-| --- | --- |
-| A command is not recognized | Install the tool and reopen PowerShell. |
-| Certificate warning | Run `mkcert -install`, restart the browser and use the address above. |
-| Port 5000 is in use | Stop the other server with Ctrl+C. |
-| Security-token error | Reopen the form and use the same hostname. |
-| Too many attempts | Wait a minute before retrying. |
-| TXT upload rejected | Save it as UTF-8 and check the size. |
-| Download or deletion unavailable | Keep the local data; check storage permissions. A pending deletion can be retried. |
+The final application is on `main`. Earlier versions remain available: [architecture](https://github.com/jpaulobaptista2000-code/secure-file-manager/tree/checkpoint/01-foundation), [Checkpoint 2](https://github.com/jpaulobaptista2000-code/secure-file-manager/tree/ed158e3ecea6f5775d77f891fdb8ad417d9a9d80) and [Checkpoint 3](https://github.com/jpaulobaptista2000-code/secure-file-manager/tree/checkpoint-3).

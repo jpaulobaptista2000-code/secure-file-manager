@@ -1,5 +1,7 @@
 # Checkpoint 3: security tests and evidence
 
+Checkpoint record, November 2026. The [final test results](../tests/RESULTS.md) include the subsequent Windows source-address check.
+
 **Updated:** 15 November 2026\
 **Latest tested implementation:** `079a7656fcc5923eddfe5ff4224e192c98d25048`\
 **Latest result (14 November):** 75 tests passed in 16.536 seconds on Linux /
@@ -10,7 +12,7 @@ Python 3.12.14; 0 failures, 0 errors, 0 skips.
 [PowerShell summary](evidence/checkpoint-3-windows-tests.txt).
 This Windows run and the browser checks below used implementation `4ef2540`,
 before the source-address logging addition. The extra test has passed on Linux;
-its Windows execution is still pending.
+its Windows execution was pending at the checkpoint and later passed in the final run.
 
 **Windows browser checks (14 November):** the student confirmed CSRF rejection,
 preservation of the test file and cross-account download denial. Inspection of
